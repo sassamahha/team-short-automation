@@ -1,75 +1,18 @@
 name: Post EN from Stock
-run-name: "post_en run #${{ github.run_number }} by ${{ github.actor }}"
-
 on:
   workflow_dispatch:
     inputs:
       max:
-        description: "Max uploads today"
+        description: Max uploads today
         default: "2"
-  schedule:
-    # - cron: "35 0 * * *"   # 09:35 JST
 
 jobs:
   post:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    env:
-      LANG: en
-      MAX_UPLOADS: ${{ github.event.inputs.max || '2' }}
-
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
-
       - uses: actions/setup-node@v4
-        with: { node-version: "20" }
-
-      - name: Install deps
-        run: |
-          set -eux
-          npm ci || npm install --no-audit --no-fund
-
-      - name: Smoke
-        run: |
-          echo "LANG=$LANG"
-          node -v
-          ls -R "videos/$LANG/queue" || true
-
-      - name: Preflight
-        run: |
-          set -eux
-          test -f scripts/youtube_upload.js
-          test -d "videos/$LANG/queue" || mkdir -p "videos/$LANG/queue"
-          [ -f "data/channel_meta/$LANG.txt" ] && cat "data/channel_meta/$LANG.txt" || true
-
-      - name: Verify secrets
-        env:
-          A: ${{ secrets.YT_CLIENT_ID }}
-          B: ${{ secrets.YT_CLIENT_SECRET }}
-          C: ${{ secrets.YT_REFRESH_TOKEN_EN }}
-        run: |
-          set -eu
-          [ -n "${A:-}" ] || { echo "YT_CLIENT_ID missing"; exit 1; }
-          [ -n "${B:-}" ] || { echo "YT_CLIENT_SECRET missing"; exit 1; }
-          [ -n "${C:-}" ] || { echo "YT_REFRESH_TOKEN_EN missing"; exit 1; }
-
-      - name: Upload to YouTube
-        env:
-          YT_CLIENT_ID:     ${{ secrets.YT_CLIENT_ID }}
-          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
-          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN_EN }}
-        run: |
-          set -eux
-          node scripts/youtube_upload.js --lang="$LANG" --max="$MAX_UPLOADS"
-
-      - name: Commit moves
-        run: |
-          set -eux
-          git config user.name  "github-actions"
-          git config user.email "actions@users.noreply.github.com"
-          git pull --rebase origin "$GITHUB_REF_NAME" || true
-          git add "videos/$LANG/sent/"* "videos/$LANG/queue/"* 2>/dev/null || true
-          git commit -m "post(${LANG}): move to sent" || echo "nothing to commit"
-          git push || true
+        with:
+          node-version: "20"
+      - name: Echo
+        run: echo "EN OK $GITHUB_RUN_NUMBER max=${{ github.event.inputs.max || '2' }}"
