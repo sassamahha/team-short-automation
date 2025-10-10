@@ -1,6 +1,4 @@
-// YAML + style -> videos/{lang}/queue/YYYY-MM-DD/####.mp4
-// usage: node scripts/render_video.js --lang=en --date=2025-10-10 --dur=10 --bg=assets/bg/loop.mp4 --audio=assets/bgm/ambient01.mp3
-
+// scripts/render_video.js
 const fs = require("fs");
 const fsp = fs.promises;
 const path = require("path");
@@ -17,7 +15,6 @@ function yamlPath(date, lang){ return path.join("data", lang, `${date}.yaml`); }
 function stylePath(){ return path.join("data","style.yaml"); }
 function outDir(date, lang){ return path.join("videos", lang, "queue", date); }
 
-// drawtext 用に最低限必要な文字をエスケープ（: , ' \ % と改行）
 function escText(s="") {
   return String(s)
     .replace(/\\/g, "\\\\")
@@ -28,26 +25,28 @@ function escText(s="") {
     .replace(/'/g, "\\\\'");
 }
 
-// 単純な折返し（英語=単語、CJK=文字数）
-function wrapTitle(title, lang, maxEn=28, maxJa=16) {
-  const isCJK = /[\u3040-\u30ff\u3400-\u9fff\uff66-\uff9f]/.test(title);
-  const max = isCJK ? maxJa : maxEn;
-  if (!title || title.length <= max) return title;
-  if (!isCJK) {
-    const words = title.split(/\s+/);
-    const lines = [];
-    let buf = "";
-    for (const w of words) {
-      const next = (buf ? buf + " " : "") + w;
-      if (next.length > max && buf) { lines.push(buf); buf = w; }
-      else { buf = next; }
+// 単純ラップ（英語=単語 / CJK=文字数）
+function wrapByLimit(text, limit, isCJK){
+  if (!text) return [""];
+  if (isCJK) {
+    const lines=[];
+    let cur="";
+    for (const ch of text) {
+      if (cur.length>=limit){ lines.push(cur); cur=ch; } else cur+=ch;
     }
-    if (buf) lines.push(buf);
-    return lines.join("\n");
+    if (cur) lines.push(cur);
+    return lines;
   } else {
+    const words = String(text).split(/\s+/);
     const lines = [];
-    for (let i=0; i<title.length; i+=max) lines.push(title.slice(i, i+max));
-    return lines.join("\n");
+    let cur = "";
+    for (const w of words) {
+      const next = (cur ? cur + " " : "") + w;
+      if (next.length > limit && cur) { lines.push(cur); cur = w; }
+      else { cur = next; }
+    }
+    if (cur) lines.push(cur);
+    return lines;
   }
 }
 
@@ -62,64 +61,90 @@ async function main(){
   const W = S.width ?? 1080;
   const H = S.height ?? 1920;
 
-  const panelMargin  = S.panel_margin ?? 48;
-  const panelPadding = S.panel_padding ?? 64;
-  const panelAlpha   = S.panel_alpha ?? 0.55;
+  const mX = S.panel_margin_x ?? 0;
+  const mY = S.panel_margin_y ?? 64;
+  const pX = S.panel_padding_x ?? 64;
+  const pY = S.panel_padding_y ?? 120;
+  const panelAlpha = S.panel_alpha ?? 0.55;
 
   const tSize = S.title_size ?? 88;
   const iSize = S.item_size ?? 54;
   const cSize = S.cta_size ?? 52;
   const gap   = S.line_gap ?? 86;
   const titleGap = S.title_line_gap ?? 72;
+  const titleBottomGap = S.title_bottom_gap ?? 64;
 
   const bullet= (S.bullet ?? "•") + " ";
   const font  = S.font || (LANG==="ja" ? "assets/fonts/NotoSansJP-Regular.ttf" : "assets/fonts/NotoSans-Regular.ttf");
-  const fontQ = `'${font.replace(/'/g, "'\\''")}'`; // パス全体をクォート、安全側
+  const fontQ = `'${font.replace(/'/g, "'\\''")}'`;
 
-  const wrapEn = S.title_wrap_chars_en ?? 28;
-  const wrapJa = S.title_wrap_chars_ja ?? 16;
+  const isCJK = /[\u3040-\u30ff\u3400-\u9fff\uff66-\uff9f]/.test(LANG==="ja" ? "あ" : "");
+  const tWrapEn = S.title_wrap_chars_en ?? 28;
+  const tWrapJa = S.title_wrap_chars_ja ?? 16;
+  const iWrapEn = S.item_wrap_chars_en ?? 36;
+  const iWrapJa = S.item_wrap_chars_ja ?? 18;
+
+  const tLimit = (LANG==="ja") ? tWrapJa : tWrapEn;
+  const iLimit = (LANG==="ja") ? iWrapJa : iWrapEn;
 
   const odir = outDir(DATE, LANG);
   await fsp.mkdir(odir, { recursive:true });
 
-  // パネル矩形
-  const px = panelMargin;
-  const py = panelMargin;
-  const pw = W - panelMargin*2;
-  const ph = H - panelMargin*2;
+  const px = mX;
+  const py = mY;
+  const pw = W - mX*2;
+  const ph = H - mY*2;
 
-  const ix = px + panelPadding;
-  const iyTitle = py + panelPadding;
-  const iyItems = iyTitle + tSize + titleGap;
-  const iyCta   = py + ph - panelPadding - cSize - 12;
+  const ix = px + pX;                         // テキスト左
+  const iyTitle = py + pY;                    // タイトル開始Y
+  const iyItemsStart = iyTitle + tSize + titleGap + titleBottomGap;
+  const iyCta   = py + ph - pY - cSize - 12;
 
   let idx = 0;
   for (const e of (doc.entries || [])) {
     idx += 1;
     const outFile = path.join(odir, `${String(idx).padStart(4,"0")}.mp4`);
 
-    const titleWrapped = wrapTitle(e.title || "", LANG, wrapEn, wrapJa);
-    const TITLE = escText(titleWrapped);
-    const items = (e.items || []).map(s => String(s || "").trim()).filter(Boolean).slice(0,8);
-    const CTA   = escText(e.cta || "");
+    // タイトル折返し
+    const titleLines = wrapByLimit(String(e.title || ""), tLimit, LANG==="ja");
 
-    // ---- フィルタ：ラベルで逐次接続 ----
+    // 箇条書き：それぞれ折返し、2行目以降はインデント
+    const itemLines = [];
+    const indent = (LANG==="ja") ? "　" : "   "; // 全角/半角空白で軽くインデント
+    for (const raw of (e.items || []).slice(0,8).map(s=>String(s||"").trim()).filter(Boolean)) {
+      const lines = wrapByLimit(raw, iLimit, LANG==="ja");
+      lines.forEach((line, li) => {
+        itemLines.push(li===0 ? (bullet+line) : (indent+line));
+      });
+    }
+
     const parts = [];
+    // 背景 + パネル
     parts.push(`[0:v]scale=${W}:${H},format=rgba,drawbox=x=${px}:y=${py}:w=${pw}:h=${ph}:color=black@${panelAlpha}:t=fill[v0]`);
-    parts.push(`[v0]drawtext=fontfile=${fontQ}:text='${TITLE}':x=${ix}:y=${iyTitle}:fontsize=${tSize}:fontcolor=white:line_spacing=${Math.max(0, titleGap - tSize + 10)}:shadowcolor=black@0.6:shadowx=2:shadowy=2[v1]`);
-    let vi = 1;
-    items.forEach((it, k) => {
-      const txt = escText(bullet + it);
-      parts.push(`[v${vi}]drawtext=fontfile=${fontQ}:text='${txt}':x=${ix}:y=${iyItems}+${k}*${gap}:fontsize=${iSize}:fontcolor=white:shadowcolor=black@0.5:shadowx=1:shadowy=1[v${vi+1}]`);
+
+    // タイトル複数行
+    let vi = 0;
+    titleLines.forEach((line, k) => {
+      const y = iyTitle + k * (tSize + Math.max(0, titleGap - tSize + 10));
+      parts.push(`[v${vi}]drawtext=fontfile=${fontQ}:text='${escText(line)}':x=${ix}:y=${y}:fontsize=${tSize}:fontcolor=white:shadowcolor=black@0.6:shadowx=2:shadowy=2[v${vi+1}]`);
       vi += 1;
     });
-    parts.push(`[v${vi}]drawtext=fontfile=${fontQ}:text='${CTA}':x=(w-text_w)/2:y=${iyCta}:fontsize=${cSize}:fontcolor=0xE0FFC8:box=1:boxcolor=black@0.55:boxborderw=24[vout]`);
+
+    // 箇条書き（1行ずつ）
+    const startY = iyItemsStart;
+    itemLines.forEach((line, k) => {
+      const y = startY + k * gap;
+      parts.push(`[v${vi}]drawtext=fontfile=${fontQ}:text='${escText(line)}':x=${ix}:y=${y}:fontsize=${iSize}:fontcolor=white:shadowcolor=black@0.5:shadowx=1:shadowy=1[v${vi+1}]`);
+      vi += 1;
+    });
+
+    // CTA
+    const ctaText = escText(e.cta || "");
+    parts.push(`[v${vi}]drawtext=fontfile=${fontQ}:text='${ctaText}':x=(w-text_w)/2:y=${iyCta}:fontsize=${cSize}:fontcolor=0xE0FFC8:box=1:boxcolor=black@0.55:boxborderw=24[vout]`);
     const filtergraph = parts.join(";");
 
     const bgArgs = BG.match(/\.(jpe?g|png)$/i) ? ["-loop","1","-t", String(DUR), "-i", BG] : ["-stream_loop","-1","-t", String(DUR), "-i", BG];
-    const audioArgs = (AUDIO && fs.existsSync(AUDIO))
-      ? ["-i", AUDIO]
-      : ["-f","lavfi","-t", String(DUR), "-i","anullsrc=cl=stereo:r=44100"];
+    const audioArgs = (AUDIO && fs.existsSync(AUDIO)) ? ["-i", AUDIO] : ["-f","lavfi","-t", String(DUR), "-i","anullsrc=cl=stereo:r=44100"];
 
     const args = [
       "-y",
