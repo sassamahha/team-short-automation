@@ -1,4 +1,4 @@
-name: Generate & Stock (pool random EN+JA)
+name: Generate & Stock (EN,JA)
 
 on:
   schedule:
