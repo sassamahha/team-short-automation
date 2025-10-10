@@ -1,4 +1,3 @@
-# .github/workflows/post_en.yml
 name: Post EN from Stock
 run-name: "post_en run #${{ github.run_number }} by ${{ github.actor }}"
 
