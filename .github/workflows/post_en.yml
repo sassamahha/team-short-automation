@@ -1,13 +1,14 @@
 name: Post EN from Stock
+run-name: "post_en run #${{ github.run_number }} by ${{ github.actor }}"
 
 on:
-  schedule:
-    # - cron: "35 0 * * *"   # 09:35 JST
   workflow_dispatch:
     inputs:
       max:
         description: "Max uploads today"
         default: "2"
+  schedule:
+    # - cron: "35 0 * * *"   # 09:35 JST
 
 jobs:
   post:
@@ -19,27 +20,37 @@ jobs:
       MAX_UPLOADS: ${{ github.event.inputs.max || '2' }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
-        with: { node-version: "20" }
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
 
       - name: Install deps
         run: |
           set -eux
           npm ci || npm install --no-audit --no-fund
 
+      - name: Smoke
+        run: |
+          echo "LANG=$LANG"
+          node -v
+          ls -R "videos/$LANG/queue" || true
+
       - name: Preflight check
         run: |
           set -eux
           test -f scripts/youtube_upload.js
           test -d "videos/$LANG/queue" || mkdir -p "videos/$LANG/queue"
-          echo "== Queue list =="
-          ls -R "videos/$LANG/queue" || true
-          # 必須メタ（あれば表示）
-          test -f "data/channel_meta/$LANG.txt" && echo "== channel_meta ==" && cat "data/channel_meta/$LANG.txt" || echo "no channel_meta/$LANG.txt (OK if script defaults)"
+          if [ -f "data/channel_meta/$LANG.txt" ]; then
+            echo "== channel_meta/$LANG.txt ==" && cat "data/channel_meta/$LANG.txt"
+          else
+            echo "no channel_meta/$LANG.txt (script defaults will be used)"
+          fi
 
       - name: Verify secrets exist
         env:
