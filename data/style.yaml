@@ -3,21 +3,31 @@ styles:
     width: 1080
     height: 1920
 
-    # panel（背景の上に乗る黒半透明の枠）
-    panel_margin: 48        # 画面外側マージン
-    panel_padding: 64       # パネル内側の余白（上下左右）
-    panel_alpha: 0.55       # 半透明の濃さ 0..1
+    # 画面外側マージン（上下/左右で分ける）
+    panel_margin_x: 0       # ←左右なし
+    panel_margin_y: 64      # ←上下64
 
-    # テキスト
-    title_size: 88
-    item_size: 54
+    # パネル内側パディング（上下/左右で分ける）
+    panel_padding_x: 64     # ←左右そのまま
+    panel_padding_y: 120    # ←上下120
+
+    panel_alpha: 0.55
+
+    # テキストサイズや行間はそのまま（必要ならここで調整）
+    title_size: 78
+    item_size: 48
     cta_size: 52
-    line_gap: 86            # 箇条書きの行間（px）
-    title_line_gap: 72      # タイトルの行間（px）
+    line_gap: 86
+    title_line_gap: 72
 
-    # 折返し（ざっくりの最大文字数）
+    # タイトルの下にさらに余白
+    title_bottom_gap: 64
+
+    # 折返し（タイトル用 / 箇条書き用 で分離）
     title_wrap_chars_en: 28
     title_wrap_chars_ja: 16
+    item_wrap_chars_en: 36
+    item_wrap_chars_ja: 18
 
     bullet: "•"
 
@@ -30,3 +40,4 @@ styles:
     bullet: "・"
     item_size: 52
     title_wrap_chars_ja: 14
+    item_wrap_chars_ja: 18
