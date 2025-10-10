@@ -6,7 +6,7 @@ const path = require("path");
 const yaml = require("js-yaml");
 const { OpenAI } = require("openai");
 
-const MODEL = process.env.OPENAI_MODEL || "gpt-5";
+const MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 const DATE = (process.argv.find(a=>a.startsWith("--date="))||"").split("=")[1] || new Date().toISOString().slice(0,10);
 
 function seedsPath(date) { return path.join("data","seeds",`${date}.txt`); }
