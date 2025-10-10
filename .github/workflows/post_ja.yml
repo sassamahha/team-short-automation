@@ -1,40 +1,34 @@
-name: Post JA from Stock
+name: Post JA
 
 on:
   workflow_dispatch: {}
   schedule:
-    - cron: '5 15 * 3-10 *'
-    - cron: '5 16 * 11,12 *'
-    - cron: '5 16 * 1,2 *'
+    - cron: "10 0 * * *"  # 09:10 JST
+    - cron: "10 6 * * *"  # 15:10 JST
+    - cron: "10 12 * * *" # 21:10 JST
+
+concurrency:
+  group: post-ja
+  cancel-in-progress: false
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    permissions: { contents: write }
     env:
       LANG: ja
-      MAX_UPLOADS: ${{ github.event.inputs.max || '2' }}
-
+      MAX_UPLOADS: "1"
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install deps
-        run: npm install --no-audit --no-fund
-
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm install --no-audit --no-fund
       - name: Upload to YouTube
         env:
           YT_CLIENT_ID:     ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN_JA }}
         run: node scripts/youtube_upload.js --lang="$LANG" --max="$MAX_UPLOADS"
-
       - name: Commit moves
         run: |
           git config user.name  "github-actions"
