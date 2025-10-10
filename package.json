@@ -1,0 +1,11 @@
+{
+  "name": "studyriver-short-automation",
+  "version": "0.1.0",
+  "private": true,
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "openai": "^4.56.0",
+    "js-yaml": "^4.1.0",
+    "googleapis": "^131.0.0"
+  }
+}
