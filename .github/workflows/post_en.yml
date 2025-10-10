@@ -3,40 +3,32 @@ name: Post EN from Stock
 on:
   workflow_dispatch: {}
   schedule:
-    # 08:00 PT（夏/冬で時差ズレ考慮。不要なら丸ごと消してOK）
-    - cron: '0 15 * 3-10 *'
-    - cron: '0 16 * 11,12 *'
-    - cron: '0 16 * 1,2 *'
+    - cron: "5 0 * * *"   # 09:05 JST
+    - cron: "5 6 * * *"   # 15:05 JST
+    - cron: "5 12 * * *"  # 21:05 JST
+
+concurrency:
+  group: post-en
+  cancel-in-progress: false
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    permissions: { contents: write }
     env:
       LANG: en
-      MAX_UPLOADS: ${{ github.event.inputs.max || '2' }}
-
+      MAX_UPLOADS: "1"   # ← ここを 1 に固定
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install deps
-        run: npm install --no-audit --no-fund
-
-      # 在庫アップロードだけ。ffmpeg等は不要
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm install --no-audit --no-fund
       - name: Upload to YouTube
         env:
           YT_CLIENT_ID:     ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN_EN }}
         run: node scripts/youtube_upload.js --lang="$LANG" --max="$MAX_UPLOADS"
-
       - name: Commit moves
         run: |
           git config user.name  "github-actions"
