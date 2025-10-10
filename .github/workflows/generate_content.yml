@@ -9,6 +9,10 @@ on:
         description: "How many entries to generate"
         default: "3"
 
+concurrency:
+  group: gen-stock
+  cancel-in-progress: false
+
 jobs:
   generate:
     runs-on: ubuntu-latest
@@ -33,7 +37,14 @@ jobs:
       - name: Install deps
         run: |
           sudo apt-get update && sudo apt-get install -y ffmpeg
-          npm install --no-audit --no-fund
+          npm ci || npm install --no-audit --no-fund
+
+      - name: Verify OPENAI key
+        env:
+          K: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          [ -n "${K:-}" ] || { echo "OPENAI_API_KEY missing"; exit 1; }
+          echo "OPENAI_API_KEY OK"
 
       # ① seedsプール → EN YAML（ランダム、未使用優先）
       - name: Seeds(pool) -> EN YAML
@@ -41,11 +52,11 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: node scripts/seed_to_yaml.js --count=${{ env.COUNT }}
 
-      # ② EN → JA 翻訳
+      # ② EN → JA 翻訳（その日の EN を明示）
       - name: EN -> JA translate
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: node scripts/translate_yaml.js --langs=ja
+        run: node scripts/translate_yaml.js --date=${DATE} --langs=ja
 
       # ③ EN/JA をレンダリング（今日の日付で出力）
       - name: Render videos (EN/JA)
