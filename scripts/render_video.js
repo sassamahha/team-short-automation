@@ -1,6 +1,7 @@
 // scripts/render_video.js
 // YAML + style -> videos/{lang}/queue/YYYY-MM-DD/####.mp4
-// 安定版: drawtext は textfile=... で外部テキストを読む。最後は [v] を -map。
+// 安定版: drawtext は textfile=... で外部テキストを読む。
+// フィルタグラフは -filter_complex に 1 行で渡し、各段は ; 区切り。最後は [v] を -map。
 
 const fs = require("fs");
 const fsp = fs.promises;
@@ -83,7 +84,7 @@ async function main(){
   const iyItemsStart = iyTitle + tSize + titleGap + titleBottomGap;
   const iyCta = py + ph - pY - cSize - 12;
 
-  // temp ディレクトリ（フィルタスクリプト＆textfileをここに）
+  // temp ディレクトリ（textfile群）
   const tmpRoot = await fsp.mkdtemp(path.join(os.tmpdir(), "srshort-"));
 
   let idx = 0;
@@ -94,7 +95,6 @@ async function main(){
     // 折返し
     const titleLines = wrapByLimit(String(e.title || ""), tLimit, LANG==="ja");
     const rawItems = (e.items || []).map(s => String(s || "").trim()).filter(Boolean).slice(0, 8);
-
     const itemLines = [];
     const indent = (LANG==="ja") ? "　" : "   ";
     for (const it of rawItems){
@@ -103,40 +103,44 @@ async function main(){
     }
     const ctaLine = String(e.cta || "");
 
-    // ---- filter_complex_script をファイルに書く ----
-    // 文字列はすべて別ファイル（UTF-8）に書いて textfile= で読み込む
-    const lines = [];
-    lines.push(`[0:v]scale=${W}:${H},format=rgba,drawbox=x=${px}:y=${py}:w=${pw}:h=${ph}:color=black@${panelAlpha}:t=fill[v0]`);
+    // textfile を用意
+    const textPaths = [];
+    const makeText = async (base, txt) => {
+      const p = path.join(tmpRoot, `${base}.txt`);
+      await fsp.writeFile(p, txt, "utf8");
+      textPaths.push(p);
+      return p;
+    };
 
-    // タイトル行
+    // フィルタグラフを ; で繋いで 1 行構築
+    const parts = [];
+    parts.push(`[0:v]scale=${W}:${H},format=rgba,drawbox=x=${px}:y=${py}:w=${pw}:h=${ph}:color=black@${panelAlpha}:t=fill[v0]`);
+
+    // タイトル
     const titleLineSpace = Math.max(0, titleGap - tSize + 10);
     let vi = 0;
     for (let k=0; k<titleLines.length; k++){
       const y = `${iyTitle}+${k}*(${tSize}+${titleLineSpace})`;
-      const tf = path.join(tmpRoot, `title_${idx}_${k}.txt`);
-      await fsp.writeFile(tf, titleLines[k], "utf8");
-      lines.push(`[v${vi}]drawtext=fontfile='${font}':textfile='${tf}':x=${ix}:y=${y}:fontsize=${tSize}:fontcolor=white:shadowcolor=black@0.6:shadowx=2:shadowy=2[v${vi+1}]`);
+      const tf = await makeText(`title_${idx}_${k}`, titleLines[k]);
+      parts.push(`[v${vi}]drawtext=fontfile=${font}:textfile=${tf}:x=${ix}:y=${y}:fontsize=${tSize}:fontcolor=white:shadowcolor=black@0.6:shadowx=2:shadowy=2[v${vi+1}]`);
       vi++;
     }
 
     // 箇条書き
     for (let k=0; k<itemLines.length; k++){
       const y = `${iyItemsStart}+${k}*${gap}`;
-      const tf = path.join(tmpRoot, `item_${idx}_${k}.txt`);
-      await fsp.writeFile(tf, itemLines[k], "utf8");
-      lines.push(`[v${vi}]drawtext=fontfile='${font}':textfile='${tf}':x=${ix}:y=${y}:fontsize=${iSize}:fontcolor=white:shadowcolor=black@0.5:shadowx=1:shadowy=1[v${vi+1}]`);
+      const tf = await makeText(`item_${idx}_${k}`, itemLines[k]);
+      parts.push(`[v${vi}]drawtext=fontfile=${font}:textfile=${tf}:x=${ix}:y=${y}:fontsize=${iSize}:fontcolor=white:shadowcolor=black@0.5:shadowx=1:shadowy=1[v${vi+1}]`);
       vi++;
     }
 
-    // CTA（中央）
+    // CTA
     {
-      const tf = path.join(tmpRoot, `cta_${idx}.txt`);
-      await fsp.writeFile(tf, ctaLine, "utf8");
-      lines.push(`[v${vi}]drawtext=fontfile='${font}':textfile='${tf}':x=(w-text_w)/2:y=${iyCta}:fontsize=${cSize}:fontcolor=0xE0FFC8:box=1:boxcolor=black@0.55:boxborderw=24[v]`);
+      const tf = await makeText(`cta_${idx}`, ctaLine);
+      parts.push(`[v${vi}]drawtext=fontfile=${font}:textfile=${tf}:x=(w-text_w)/2:y=${iyCta}:fontsize=${cSize}:fontcolor=0xE0FFC8:box=1:boxcolor=black@0.55:boxborderw=24[v]`);
     }
 
-    const scriptPath = path.join(tmpRoot, `fc_${idx}.txt`);
-    await fsp.writeFile(scriptPath, lines.join("\n"), "utf8");
+    const filtergraph = parts.join(";");
 
     // 入力
     const bgArgs = BG.match(/\.(jpe?g|png)$/i)
@@ -152,7 +156,7 @@ async function main(){
       "-y",
       ...bgArgs,
       ...audioArgs,
-      "-filter_complex_script", scriptPath,
+      "-filter_complex", filtergraph,
       "-map","[v]","-map","1:a?",
       "-shortest",
       "-r","30","-c:v","libx264","-pix_fmt","yuv420p","-c:a","aac",
@@ -161,6 +165,10 @@ async function main(){
 
     const r = spawnSync("ffmpeg", args, { stdio: "inherit" });
     if (r.status !== 0) throw new Error("ffmpeg failed");
+
+    // 生成した textfile を掃除（不要なら残してもOK）
+    for (const p of textPaths){ try { await fsp.unlink(p); } catch(_){} }
+
     console.log("[mp4]", outFile);
   }
 }
