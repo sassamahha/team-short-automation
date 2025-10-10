@@ -1,16 +1,15 @@
 name: Post EN from Stock
 
 on:
-  workflow_dispatch:
-    inputs:
-      max:
-        description: Max uploads today
-        default: "2"
+  workflow_dispatch: {}
   schedule:
-    # - cron: "35 0 * * *"
+    # 08:00 PT（夏/冬で時差ズレ考慮。不要なら丸ごと消してOK）
+    - cron: '0 15 * 3-10 *'
+    - cron: '0 16 * 11,12 *'
+    - cron: '0 16 * 1,2 *'
 
 jobs:
-  post:
+  publish:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -21,60 +20,27 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: 20
 
       - name: Install deps
-        run: |
-          set -eux
-          npm ci || npm install --no-audit --no-fund
+        run: npm install --no-audit --no-fund
 
-      - name: Smoke
-        run: |
-          echo "LANG=$LANG"
-          node -v
-          ls -R "videos/$LANG/queue" || true
-
-      - name: Preflight
-        run: |
-          set -eux
-          test -f scripts/youtube_upload.js
-          test -d "videos/$LANG/queue" || mkdir -p "videos/$LANG/queue"
-          if [ -f "data/channel_meta/$LANG.txt" ]; then
-            cat "data/channel_meta/$LANG.txt"
-          fi
-
-      - name: Verify secrets
-        env:
-          A: ${{ secrets.YT_CLIENT_ID }}
-          B: ${{ secrets.YT_CLIENT_SECRET }}
-          C: ${{ secrets.YT_REFRESH_TOKEN_EN }}
-        run: |
-          set -eu
-          [ -n "${A:-}" ] || { echo "YT_CLIENT_ID missing"; exit 1; }
-          [ -n "${B:-}" ] || { echo "YT_CLIENT_SECRET missing"; exit 1; }
-          [ -n "${C:-}" ] || { echo "YT_REFRESH_TOKEN_EN missing"; exit 1; }
-
+      # 在庫アップロードだけ。ffmpeg等は不要
       - name: Upload to YouTube
         env:
           YT_CLIENT_ID:     ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN_EN }}
-        run: |
-          set -eux
-          node scripts/youtube_upload.js --lang="$LANG" --max="$MAX_UPLOADS"
+        run: node scripts/youtube_upload.js --lang="$LANG" --max="$MAX_UPLOADS"
 
       - name: Commit moves
         run: |
-          set -eux
           git config user.name  "github-actions"
           git config user.email "actions@users.noreply.github.com"
-          git pull --rebase origin "$GITHUB_REF_NAME" || true
-          git add "videos/$LANG/sent/"* "videos/$LANG/queue/"* 2>/dev/null || true
+          git add videos/$LANG/sent/* videos/$LANG/queue/* 2>/dev/null || true
           git commit -m "post(${LANG}): move to sent" || echo "nothing to commit"
           git push || true
