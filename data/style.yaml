@@ -14,7 +14,7 @@ styles:
     panel_alpha: 0.55
 
     # テキストサイズや行間はそのまま（必要ならここで調整）
-    title_size: 58
+    title_size: 62
     item_size: 42
     cta_size: 48
     line_gap: 96
@@ -25,9 +25,9 @@ styles:
 
     # 折返し（タイトル用 / 箇条書き用 で分離）
     title_wrap_chars_en: 28
-    title_wrap_chars_ja: 16
+    title_wrap_chars_ja: 15
     item_wrap_chars_en: 36
-    item_wrap_chars_ja: 18
+    item_wrap_chars_ja: 16
 
     bullet: "•"
 
