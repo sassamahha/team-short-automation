@@ -33,7 +33,7 @@ jobs:
       - name: Install deps
         run: |
           sudo apt-get update && sudo apt-get install -y ffmpeg
-          npm ci
+          npm install --no-audit --no-fund
 
       # ① seedsプール → EN YAML（ランダム、未使用優先）
       - name: Seeds(pool) -> EN YAML
