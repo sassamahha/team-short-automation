@@ -1,3 +1,4 @@
+# .github/workflows/post_en.yml
 name: Post EN from Stock
 run-name: "post_en run #${{ github.run_number }} by ${{ github.actor }}"
 
@@ -22,13 +23,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+        with: { fetch-depth: 0 }
 
       - name: Setup Node
         uses: actions/setup-node@v4
-        with:
-          node-version: "20"
+        with: { node-version: "20" }
 
       - name: Install deps
         run: |
