@@ -2,7 +2,7 @@ name: Post EN from Stock
 
 on:
   schedule:
-    - cron: "35 0 * * *"   # 09:35 JST
+   # - cron: "35 0 * * *"   # 09:35 JST
   workflow_dispatch:
     inputs:
       max:
