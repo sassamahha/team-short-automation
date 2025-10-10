@@ -1,0 +1,84 @@
+name: Generate & Stock (EN+JA)
+
+on:
+  schedule:
+    - cron: "5 0 * * *"   # 09:05 JST
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "YYYY-MM-DD (optional)"
+        default: ""
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # 在庫コミット用
+    env:
+      DATE_INPUT: ${{ github.event.inputs.date }}
+      DURATION: "10"
+      BG: assets/bg/loop.mp4
+      AUDIO: assets/bgm/ambient01.mp3
+      LANGS_TO_RENDER: "en,ja"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set DATE
+        run: echo "DATE=${{ env.DATE_INPUT || (github.event_name == 'schedule' && '$(date +%F)') || '' }}" >> $GITHUB_ENV
+        shell: bash
+
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+
+      - name: Install deps
+        run: |
+          sudo apt-get update && sudo apt-get install -y ffmpeg
+          npm ci
+
+      # ① seeds -> EN YAML（種ファイルが無い日はスキップ）
+      - name: Seeds -> EN YAML
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          if [ -z "${DATE}" ]; then DATE=$(date +%F); fi
+          if [ -f "data/seeds/${DATE}.txt" ]; then
+            node scripts/seed_to_yaml.js --date=${DATE}
+          else
+            echo "no seeds for ${DATE} -> skip"
+          fi
+
+      # ② EN -> JA（翻訳）
+      - name: EN -> JA translate
+        if: always()
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          if [ -z "${DATE}" ]; then DATE=$(date +%F); fi
+          if [ -f "data/en/${DATE}.yaml" ]; then
+            node scripts/translate_yaml.js --date=${DATE} --langs=ja
+          else
+            echo "no EN yaml -> skip JA translate"
+          fi
+
+      # ③ Render videos（EN/JA）
+      - name: Render videos (EN/JA)
+        run: |
+          if [ -z "${DATE}" ]; then DATE=$(date +%F); fi
+          IFS=',' read -ra LGS <<< "${{ env.LANGS_TO_RENDER }}"
+          for L in "${LGS[@]}"; do
+            if [ -f "data/$L/${DATE}.yaml" ]; then
+              node scripts/render_video.js --lang=$L --date=${DATE} --dur=${{ env.DURATION }} --bg=${{ env.BG }} --audio=${{ env.AUDIO }}
+            else
+              echo "skip $L (data/$L/${DATE}.yaml not found)"
+            fi
+          done
+
+      # 在庫をコミット
+      - name: Commit stock
+        run: |
+          git config user.name  "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          git add videos/*/queue/${DATE} || true
+          git commit -m "stock: ${DATE} videos" || echo "nothing to commit"
+          git push || true

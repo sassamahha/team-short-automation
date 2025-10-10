@@ -1,0 +1,22 @@
+styles:
+  default:
+    width: 1080
+    height: 1920
+    pad: 64
+    overlay_alpha: 0.47
+    title_y: 240
+    items_y: 520
+    line_gap: 86
+    cta_y: 1720
+    title_size: 88
+    item_size: 54
+    cta_size: 52
+    bullet: "•"
+    bg_source: "video"        # "video" or "image"
+  en:
+    font: "assets/fonts/NotoSans-Regular.ttf"
+    bullet: "•"
+  ja:
+    font: "assets/fonts/NotoSansJP-Regular.ttf"
+    bullet: "・"
+    item_size: 52
