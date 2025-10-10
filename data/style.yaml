@@ -2,21 +2,31 @@ styles:
   default:
     width: 1080
     height: 1920
-    pad: 64
-    overlay_alpha: 0.47
-    title_y: 240
-    items_y: 520
-    line_gap: 86
-    cta_y: 1720
+
+    # panel（背景の上に乗る黒半透明の枠）
+    panel_margin: 48        # 画面外側マージン
+    panel_padding: 64       # パネル内側の余白（上下左右）
+    panel_alpha: 0.55       # 半透明の濃さ 0..1
+
+    # テキスト
     title_size: 88
     item_size: 54
     cta_size: 52
+    line_gap: 86            # 箇条書きの行間（px）
+    title_line_gap: 72      # タイトルの行間（px）
+
+    # 折返し（ざっくりの最大文字数）
+    title_wrap_chars_en: 28
+    title_wrap_chars_ja: 16
+
     bullet: "•"
-    bg_source: "video"        # "video" or "image"
+
   en:
     font: "assets/fonts/NotoSans-Regular.ttf"
     bullet: "•"
+
   ja:
     font: "assets/fonts/NotoSansJP-Regular.ttf"
     bullet: "・"
     item_size: 52
+    title_wrap_chars_ja: 14
