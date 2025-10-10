@@ -1,60 +1,104 @@
-// EN YAML -> data/{lang}/YYYY-MM-DD.yaml
-// usage: node scripts/translate_yaml.js --date=2025-10-10 --langs=ja
+// scripts/translate_yaml.js（差し替え）
 const fs = require("fs");
 const fsp = fs.promises;
 const path = require("path");
 const yaml = require("js-yaml");
 const { OpenAI } = require("openai");
 
+const DATE  = new Date().toISOString().slice(0,10);
+const LANGS = ((process.argv.find(a=>a.startsWith("--langs="))||"").split("=")[1] || "ja").split(",").map(s=>s.trim()).filter(Boolean);
 const MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
-const DATE  = (process.argv.find(a=>a.startsWith("--date=")) || "").split("=")[1] || new Date().toISOString().slice(0,10);
-const LANGS = ((process.argv.find(a=>a.startsWith("--langs=")) || "").split("=")[1] || "ja").split(",").map(s=>s.trim()).filter(Boolean);
 
-function inPathEN(date) { return path.join("data","en",`${date}.yaml`); }
-function outPath(date, lang) { return path.join("data", lang, `${date}.yaml`); }
+const LANG_NAMES = { ja:"Japanese" };
 
-const LANG_NAMES = { ja:"Japanese", es:"Spanish", pt:"Portuguese", de:"German", fr:"French", it:"Italian", nl:"Dutch", sv:"Swedish", da:"Danish", no:"Norwegian", fi:"Finnish", pl:"Polish", tr:"Turkish", ar:"Arabic", hi:"Hindi", id:"Indonesian", th:"Thai" };
+function hasLatin(s){ return /[A-Za-z]/.test(s || ""); }
 
-async function main() {
+function toYamlObject(src){
+  return { title: src.title, items: src.items, cta: src.cta, tags: src.tags };
+}
+
+async function translateOne(client, target, src){
+  const langName = LANG_NAMES[target] || target;
+  const sys = `You are a professional translator. Output ONLY valid YAML, no code fences. Translate into ${langName} that is natural, concise, and culturally neutral.`;
+  const prompt =
+`Translate this JSON into ${langName}. Keep exactly 8 bullets. Keep tags short (2-4). Do not add explanations.
+JSON:
+${JSON.stringify(toYamlObject(src))}`;
+
+  const run = async (temp)=> {
+    const r = await client.chat.completions.create({
+      model: MODEL, temperature: temp,
+      messages: [{role:"system",content:sys},{role:"user",content:prompt}]
+    });
+    return (r.choices?.[0]?.message?.content || "").trim();
+  };
+
+  // 1st try
+  let out = await run(0.2);
+  let obj;
+  try { obj = yaml.load(out) || {}; } catch { obj = {}; }
+
+  const isJA = target === "ja";
+  const bad = isJA && (
+    hasLatin(obj?.title) ||
+    (Array.isArray(obj?.items) && obj.items.some(hasLatin)) ||
+    (obj?.cta && hasLatin(obj.cta))
+  );
+
+  if (bad) {
+    // retry with harder constraint
+    const sys2 = `You are a translation engine. Return YAML only. All output MUST be in ${langName} characters. Latin letters are NOT allowed except common tags.`;
+    const r2 = await client.chat.completions.create({
+      model: MODEL, temperature: 0.1,
+      messages: [{role:"system",content:sys2},{role:"user",content:prompt}]
+    });
+    out = (r2.choices?.[0]?.message?.content || "").trim();
+    try { obj = yaml.load(out) || {}; } catch { obj = {}; }
+  }
+
+  // fallback: dumb transliteration using the model
+  if (isJA && (hasLatin(obj?.title) || (obj?.items||[]).some(hasLatin) || hasLatin(obj?.cta))) {
+    const r3 = await client.chat.completions.create({
+      model: MODEL, temperature: 0.1,
+      messages: [
+        {role:"system",content:"Return plain JSON only."},
+        {role:"user",content:`Translate every field into Japanese. Keep 8 items. JSON:\n${JSON.stringify(toYamlObject(src))}`}
+      ]
+    });
+    try { obj = JSON.parse(r3.choices?.[0]?.message?.content || "{}"); } catch { obj = {}; }
+  }
+
+  // sanitize
+  const items = Array.isArray(obj.items) ? obj.items.map(s=>String(s||"").trim()).filter(Boolean).slice(0,8) : src.items;
+  while (items.length < 8) items.push("");
+  const tags = Array.isArray(obj.tags) ? obj.tags.map(s=>String(s||"").trim()).filter(Boolean).slice(0,4) : (src.tags||[]);
+  return {
+    title: (obj.title && String(obj.title).trim()) || src.title,
+    items,
+    cta: (obj.cta && String(obj.cta).trim()) || src.cta,
+    tags
+  };
+}
+
+async function main(){
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("OPENAI_API_KEY missing");
   const client = new OpenAI({ apiKey });
 
-  const src = inPathEN(DATE);
-  if (!fs.existsSync(src)) throw new Error(`EN yaml not found: ${src}`);
-  const en = yaml.load(await fsp.readFile(src,"utf8"));
+  const enPath = path.join("data","en",`${DATE}.yaml`);
+  if (!fs.existsSync(enPath)) throw new Error(`EN yaml not found: ${enPath}`);
+  const en = yaml.load(await fsp.readFile(enPath, "utf8")) || { entries:[] };
 
   for (const lg of LANGS) {
-    const out = outPath(DATE, lg);
-    await fsp.mkdir(path.dirname(out), { recursive:true });
+    const outPath = path.join("data", lg, `${DATE}.yaml`);
+    await fsp.mkdir(path.dirname(outPath), { recursive:true });
 
     const arr = [];
-    for (const e of en.entries || []) {
-      const prompt =
-`Translate to ${LANG_NAMES[lg] || lg}.
-Return YAML with keys: title, items (exactly 8 bullets), cta, tags.
-Keep bullets short, concrete, and natural for ${LANG_NAMES[lg] || lg} speakers.
-Source JSON:
-${JSON.stringify({ title:e.title, items:e.items, cta:e.cta, tags:e.tags })}`;
-      const res = await client.chat.completions.create({
-        model: MODEL, temperature: 0.2,
-        messages: [
-          { role:"system", content:"Output only valid YAML. No extra text." },
-          { role:"user", content: prompt }
-        ]
-      });
-      let obj; 
-      try { obj = yaml.load(res.choices[0].message.content.trim()) || {}; } catch(_) { obj = {}; }
-      let items = (obj.items || []).slice(0,8);
-      while (items.length < 8) items.push("");
-      arr.push({
-        title: obj.title || e.title,
-        items, cta: obj.cta || e.cta,
-        tags: Array.isArray(obj.tags) ? obj.tags.slice(0,4) : e.tags || []
-      });
+    for (const e of en.entries) {
+      arr.push(await translateOne(client, lg, e));
     }
-    await fsp.writeFile(out, yaml.dump({ entries: arr }, { lineWidth: 1000 }), "utf8");
-    console.log(`[ok] wrote ${out} (${arr.length} entries)`);
+    await fsp.writeFile(outPath, yaml.dump({ entries: arr }, { lineWidth: 1000 }), "utf8");
+    console.log(`[ok] wrote ${outPath} (${arr.length} entries)`);
   }
 }
 
