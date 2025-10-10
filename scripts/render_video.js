@@ -1,14 +1,13 @@
 // scripts/render_video.js
 // YAML + style -> videos/{lang}/queue/YYYY-MM-DD/####.mp4
-// usage:
-//   node scripts/render_video.js --lang=en --date=2025-10-11 --dur=10 \
-//        --bg=assets/bg/loop.mp4 --audio=assets/bgm/ambient01.mp3
+// 安定版: drawtext は textfile=... で外部テキストを読む。最後は [v] を -map。
 
 const fs = require("fs");
 const fsp = fs.promises;
 const path = require("path");
 const yaml = require("js-yaml");
 const { spawnSync } = require("child_process");
+const os = require("os");
 
 const LANG = (process.argv.find(a => a.startsWith("--lang=")) || "").split("=")[1] || "en";
 const DATE = (process.argv.find(a => a.startsWith("--date=")) || "").split("=")[1] || new Date().toISOString().slice(0, 10);
@@ -17,19 +16,8 @@ const BG   = (process.argv.find(a => a.startsWith("--bg="))   || "").split("=")[
 const AUDIO= (process.argv.find(a => a.startsWith("--audio="))|| "").split("=")[1] || "assets/bgm/ambient01.mp3";
 
 function yamlPath(date, lang){ return path.join("data", lang, `${date}.yaml`); }
-function stylePath(){ return path.join("data", "style.yaml"); }
+function stylePath(){ return path.join("data","style.yaml"); }
 function outDir(date, lang){ return path.join("videos", lang, "queue", date); }
-
-// drawtext用： \ : , % 改行 ' をエスケープ（ffmpeg仕様）
-function escText(s=""){
-  return String(s)
-    .replace(/\\/g, "\\\\")   // \  -> \\
-    .replace(/:/g,  "\\:")    // :  -> \:
-    .replace(/,/g,  "\\,")    // ,  -> \,
-    .replace(/%/g,  "\\%")    // %  -> \%
-    .replace(/\n/g, "\\n")    // LF -> \n
-    .replace(/'/g,  "\\'");   // '  -> \'
-}
 
 // 単純ラップ（英語=単語 / CJK=文字数）
 function wrapByLimit(text, limit, isCJK){
@@ -66,10 +54,10 @@ async function main(){
   const H = S.height ?? 1920;
 
   // 外側マージン＆内側パディング（上下左右個別）
-  const mX = S.panel_margin_x ?? 0;     // ←左右
-  const mY = S.panel_margin_y ?? 64;    // ←上下
-  const pX = S.panel_padding_x ?? 64;   // ←左右
-  const pY = S.panel_padding_y ?? 120;  // ←上下
+  const mX = S.panel_margin_x ?? 0;     // 左右
+  const mY = S.panel_margin_y ?? 64;    // 上下
+  const pX = S.panel_padding_x ?? 64;   // 左右
+  const pY = S.panel_padding_y ?? 120;  // 上下
   const panelAlpha = S.panel_alpha ?? 0.55;
 
   const tSize = S.title_size ?? 88;
@@ -95,6 +83,9 @@ async function main(){
   const iyItemsStart = iyTitle + tSize + titleGap + titleBottomGap;
   const iyCta = py + ph - pY - cSize - 12;
 
+  // temp ディレクトリ（フィルタスクリプト＆textfileをここに）
+  const tmpRoot = await fsp.mkdtemp(path.join(os.tmpdir(), "srshort-"));
+
   let idx = 0;
   for (const e of (doc.entries || [])){
     idx++;
@@ -103,37 +94,49 @@ async function main(){
     // 折返し
     const titleLines = wrapByLimit(String(e.title || ""), tLimit, LANG==="ja");
     const rawItems = (e.items || []).map(s => String(s || "").trim()).filter(Boolean).slice(0, 8);
+
     const itemLines = [];
     const indent = (LANG==="ja") ? "　" : "   ";
     for (const it of rawItems){
       const arr = wrapByLimit(it, iLimit, LANG==="ja");
       arr.forEach((line, li)=> itemLines.push(li===0 ? (bullet+line) : (indent+line)));
     }
-    const CTA = escText(e.cta || "");
+    const ctaLine = String(e.cta || "");
 
-    // ---- 単一チェーン（最後に [v] を出力）----
-    const chain = [];
-    chain.push(`scale=${W}:${H}`);
-    chain.push(`format=rgba`);
-    chain.push(`drawbox=x=${px}:y=${py}:w=${pw}:h=${ph}:color=black@${panelAlpha}:t=fill`);
+    // ---- filter_complex_script をファイルに書く ----
+    // 文字列はすべて別ファイル（UTF-8）に書いて textfile= で読み込む
+    const lines = [];
+    lines.push(`[0:v]scale=${W}:${H},format=rgba,drawbox=x=${px}:y=${py}:w=${pw}:h=${ph}:color=black@${panelAlpha}:t=fill[v0]`);
 
+    // タイトル行
     const titleLineSpace = Math.max(0, titleGap - tSize + 10);
+    let vi = 0;
+    for (let k=0; k<titleLines.length; k++){
+      const y = `${iyTitle}+${k}*(${tSize}+${titleLineSpace})`;
+      const tf = path.join(tmpRoot, `title_${idx}_${k}.txt`);
+      await fsp.writeFile(tf, titleLines[k], "utf8");
+      lines.push(`[v${vi}]drawtext=fontfile='${font}':textfile='${tf}':x=${ix}:y=${y}:fontsize=${tSize}:fontcolor=white:shadowcolor=black@0.6:shadowx=2:shadowy=2[v${vi+1}]`);
+      vi++;
+    }
 
-    // タイトル複数行
-    titleLines.forEach((line, k) => {
-      chain.push(`drawtext=fontfile='${font}':text='${escText(line)}':x=${ix}:y=${iyTitle}+${k}*(${tSize}+${titleLineSpace}):fontsize=${tSize}:fontcolor=white:shadowcolor=black@0.6:shadowx=2:shadowy=2`);
-    });
+    // 箇条書き
+    for (let k=0; k<itemLines.length; k++){
+      const y = `${iyItemsStart}+${k}*${gap}`;
+      const tf = path.join(tmpRoot, `item_${idx}_${k}.txt`);
+      await fsp.writeFile(tf, itemLines[k], "utf8");
+      lines.push(`[v${vi}]drawtext=fontfile='${font}':textfile='${tf}':x=${ix}:y=${y}:fontsize=${iSize}:fontcolor=white:shadowcolor=black@0.5:shadowx=1:shadowy=1[v${vi+1}]`);
+      vi++;
+    }
 
-    // 箇条書き（1行ずつ）
-    itemLines.forEach((line, k) => {
-      chain.push(`drawtext=fontfile='${font}':text='${escText(line)}':x=${ix}:y=${iyItemsStart}+${k}*${gap}:fontsize=${iSize}:fontcolor=white:shadowcolor=black@0.5:shadowx=1:shadowy=1`);
-    });
+    // CTA（中央）
+    {
+      const tf = path.join(tmpRoot, `cta_${idx}.txt`);
+      await fsp.writeFile(tf, ctaLine, "utf8");
+      lines.push(`[v${vi}]drawtext=fontfile='${font}':textfile='${tf}':x=(w-text_w)/2:y=${iyCta}:fontsize=${cSize}:fontcolor=0xE0FFC8:box=1:boxcolor=black@0.55:boxborderw=24[v]`);
+    }
 
-    // CTA
-    chain.push(`drawtext=fontfile='${font}':text='${CTA}':x=(w-text_w)/2:y=${iyCta}:fontsize=${cSize}:fontcolor=0xE0FFC8:box=1:boxcolor=black@0.55:boxborderw=24`);
-
-    // 出力ラベル
-    const filtergraph = chain.join(",") + ",format=yuv420p[v]";
+    const scriptPath = path.join(tmpRoot, `fc_${idx}.txt`);
+    await fsp.writeFile(scriptPath, lines.join("\n"), "utf8");
 
     // 入力
     const bgArgs = BG.match(/\.(jpe?g|png)$/i)
@@ -149,7 +152,7 @@ async function main(){
       "-y",
       ...bgArgs,
       ...audioArgs,
-      "-filter_complex", filtergraph,
+      "-filter_complex_script", scriptPath,
       "-map","[v]","-map","1:a?",
       "-shortest",
       "-r","30","-c:v","libx264","-pix_fmt","yuv420p","-c:a","aac",
