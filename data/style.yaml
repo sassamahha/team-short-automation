@@ -14,7 +14,7 @@ styles:
     panel_alpha: 0.55
 
     # テキストサイズや行間はそのまま（必要ならここで調整）
-    title_size: 68
+    title_size: 58
     item_size: 42
     cta_size: 48
     line_gap: 96
