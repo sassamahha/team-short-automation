@@ -22,7 +22,7 @@ function escText(s=""){
     .replace(/,/g,"\\,")
     .replace(/%/g,"\\%")
     .replace(/\n/g,"\\n")
-    .replace(/'/g,"\\\\'");
+    .replace(/'/g,"\\'");
 }
 
 // 単純ラップ（英語=単語 / CJK=文字数）
@@ -113,16 +113,16 @@ async function main(){
     // タイトル複数行
     const titleLineSpace = Math.max(0, titleGap - tSize + 10);
     titleLines.forEach((line,k)=>{
-      chain.push(`drawtext=fontfile=${font}:text='${escText(line)}':x=${ix}:y=${iyTitle}+${k}*(${tSize}+${titleLineSpace}):fontsize=${tSize}:fontcolor=white:shadowcolor=black@0.6:shadowx=2:shadowy=2`);
+      chain.push(`drawtext=fontfile='${font}':text='${escText(line)}':x=${ix}:y=${iyTitle}+${k}*(${tSize}+${titleLineSpace}):fontsize=${tSize}:fontcolor=white:shadowcolor=black@0.6:shadowx=2:shadowy=2`);
     });
 
     // 箇条書き
     itemLines.forEach((line,k)=>{
-      chain.push(`drawtext=fontfile=${font}:text='${escText(line)}':x=${ix}:y=${iyItemsStart}+${k}*${gap}:fontsize=${iSize}:fontcolor=white:shadowcolor=black@0.5:shadowx=1:shadowy=1`);
+      chain.push(`drawtext=fontfile='${font}':text='${escText(line)}':x=${ix}:y=${iyItemsStart}+${k}*${gap}:fontsize=${iSize}:fontcolor=white:shadowcolor=black@0.5:shadowx=1:shadowy=1`);
     });
 
     // CTA
-    chain.push(`drawtext=fontfile=${font}:text='${CTA}':x=(w-text_w)/2:y=${iyCta}:fontsize=${cSize}:fontcolor=0xE0FFC8:box=1:boxcolor=black@0.55:boxborderw=24`);
+    chain.push(`drawtext=fontfile='${font}':text='${CTA}':x=(w-text_w)/2:y=${iyCta}:fontsize=${cSize}:fontcolor=0xE0FFC8:box=1:boxcolor=black@0.55:boxborderw=24`);
     const filtergraph = chain.join(",");
 
     const bgArgs = BG.match(/\.(jpe?g|png)$/i) ? ["-loop","1","-t", String(DUR), "-i", BG] : ["-stream_loop","-1","-t", String(DUR), "-i", BG];
