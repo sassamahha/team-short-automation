@@ -14,14 +14,14 @@ styles:
     panel_alpha: 0.55
 
     # テキストサイズや行間はそのまま（必要ならここで調整）
-    title_size: 78
+    title_size: 68
     item_size: 48
     cta_size: 52
     line_gap: 86
     title_line_gap: 72
 
     # タイトルの下にさらに余白
-    title_bottom_gap: 64
+    title_bottom_gap: 96
 
     # 折返し（タイトル用 / 箇条書き用 で分離）
     title_wrap_chars_en: 28
