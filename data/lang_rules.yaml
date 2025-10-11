@@ -1,0 +1,40 @@
+rules:
+  default:
+    validate: false
+    min_items_ratio: 0.6   # 箇条書きのうち何割がそのスクリプトを含むか
+
+  ja:
+    validate: true
+    any_scripts: ["Han", "Hiragana", "Katakana"]
+
+  ko:
+    validate: true
+    any_scripts: ["Hangul"]
+
+  zh:
+    validate: true
+    any_scripts: ["Han"]
+
+  ru:
+    validate: true
+    any_scripts: ["Cyrillic"]
+
+  ar:
+    validate: true
+    any_scripts: ["Arabic"]
+
+  he:
+    validate: true
+    any_scripts: ["Hebrew"]
+
+  th:
+    validate: true
+    any_scripts: ["Thai"]
+
+  hi:
+    validate: true
+    any_scripts: ["Devanagari"]
+
+  bn:
+    validate: true
+    any_scripts: ["Bengali"]
