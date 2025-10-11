@@ -23,7 +23,7 @@ jobs:
       DURATION: "10"
       BG: assets/bg/loop.mp4
       AUDIO: assets/bgm/ambient01.mp3
-      LANGS_TO_RENDER: "en,ja"
+      LANGS_TO_RENDER: "en,ja,es"
 
     steps:
       - uses: actions/checkout@v4
@@ -52,14 +52,14 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: node scripts/seed_to_yaml.js --count=${{ env.COUNT }}
 
-      # ② EN → JA 翻訳（その日の EN を明示）
-      - name: EN -> JA translate
+      # ② EN → JA/ES 翻訳（その日の EN を明示）
+      - name: EN -> JA/ES translate
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: node scripts/translate_yaml.js --date=${DATE} --langs=ja
+        run: node scripts/translate_yaml.js --date=${DATE} --langs=ja,es
 
       # ③ EN/JA をレンダリング（今日の日付で出力）
-      - name: Render videos (EN/JA)
+      - name: Render videos (EN/JA/ES)
         run: |
           IFS=',' read -ra LGS <<< "${{ env.LANGS_TO_RENDER }}"
           for L in "${LGS[@]}"; do
