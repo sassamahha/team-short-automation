@@ -1,12 +1,9 @@
 // scripts/render_video.js
-// YAML + style -> videos/{lang}/queue/YYYY-MM-DD/####.mp4 (+ ####.json)
+// YAML + style -> videos/{lang}/queue/YYYY-MM-DD/####.mp4 (+ ####.json sidecar)
 // - drawtext は textfile=... を使用（エスケープ事故防止）
-// - フィルタグラフは ; 区切り 1 本の -filter_complex
-// - panel のマージン/パディング（上下左右個別）対応
-// - sidecar JSON に { title, description, tags } を出力
-//   * title は channel_meta の suffix を付与済み
-//   * description / tags は channel_meta を既定値として利用
-
+// - フィルタグラフは ; 区切りで 1 本の -filter_complex
+// - style.yaml の panel_margin/padding 指定（上下左右個別）に対応
+// - アップロード用メタ (title/description/tags) を sidecar JSON に保存
 const fs = require("fs");
 const fsp = fs.promises;
 const path = require("path");
@@ -23,50 +20,66 @@ const AUDIO = (process.argv.find(a=>a.startsWith("--audio=")) || "").split("=")[
 
 // ---- paths
 const yamlPath  = (d,lang)=> path.join("data", lang, `${d}.yaml`);
-const stylePath = ()          => path.join("data", "style.yaml");
+const stylePath = ()          => path.join("data","style.yaml");
 const outDir    = (d,lang)=>   path.join("videos", lang, "queue", d);
 const chMetaTxt = (lang)=>     path.join("data","channel_meta",`${lang}.txt`);
 
-// ---- wrap helper（EN=word / CJK=char）
+// ---- util: simple wrapping (EN=word, CJK=char)
 function wrapByLimit(text, limit, isCJK){
   if (!text) return [""];
   if (isCJK){
     const lines=[]; let cur="";
-    for (const ch of String(text)){
-      if (cur.length >= limit){ lines.push(cur); cur = ch; }
-      else cur += ch;
+    for (const ch of text){
+      if (cur.length>=limit){ lines.push(cur); cur=ch; } else cur+=ch;
     }
     if (cur) lines.push(cur);
     return lines;
-  }else{
+  } else {
     const words = String(text).trim().split(/\s+/);
     const lines=[]; let cur="";
     for (const w of words){
-      const next = (cur ? cur + " " : "") + w;
-      if (next.length > limit && cur){ lines.push(cur); cur = w; }
-      else cur = next;
+      const next = (cur?cur+" ":"")+w;
+      if (next.length>limit && cur){ lines.push(cur); cur=w; }
+      else cur=next;
     }
     if (cur) lines.push(cur);
     return lines;
   }
 }
 
-// ---- channel meta（1行目:suffix / 2行目:desc / 3行目:tags,comma）
-function readChannelMeta(lang){
+// ---- channel meta (key=value 形式)
+function readChannelMetaKV(lang){
   const def = {
-    suffix: "",
-    desc: "📌 Daily 10s ‘Small Wins’. Save and try one today.",
-    tags: ["small wins","mindset","self help"]
+    title_suffix: "",
+    description: "📌 Daily 10s ‘Small Wins’. Save and try one today.",
+    tags: ["small wins","mindset","self help"],
+    tags_extra: ""
   };
   const p = chMetaTxt(lang);
   if (!fs.existsSync(p)) return def;
 
-  const [l1="", l2="", l3=""] = fs.readFileSync(p, "utf8").split(/\r?\n/);
-  return {
-    suffix: (l1||"").trim() || def.suffix,
-    desc:   (l2||"").trim() || def.desc,
-    tags:   (l3 ? l3.split(",").map(s=>s.trim()).filter(Boolean).slice(0,10) : def.tags)
-  };
+  const lines = fs.readFileSync(p, "utf8").split(/\r?\n/);
+  let curKey = null;
+  for (let raw of lines){
+    const line = raw.replace(/^\uFEFF/, "").trim(); // strip BOM / trim
+    if (!line || line.startsWith("#")) continue;
+    const m = line.match(/^([a-zA-Z_]+)\s*=\s*(.*)$/);
+    if (m){
+      curKey = m[1];
+      const v = m[2];
+      if (curKey === "title_suffix") def.title_suffix = v;
+      else if (curKey === "description") def.description = v;
+      else if (curKey === "tags"){
+        def.tags = v.split(",").map(s=>s.trim()).filter(Boolean).slice(0,10);
+      } else if (curKey === "tags_extra"){
+        def.tags_extra = v;
+      }
+      continue;
+    }
+    // description の複数行対応
+    if (curKey === "description") def.description += "\n" + raw;
+  }
+  return def;
 }
 
 async function main(){
@@ -74,8 +87,8 @@ async function main(){
   const yml = yamlPath(DATE, LANG);
   if (!fs.existsSync(yml)) throw new Error(`content not found: ${yml}`);
 
-  const doc = yaml.load(await fsp.readFile(yml, "utf8")) || {};
-  const st  = yaml.load(await fsp.readFile(stylePath(), "utf8")) || {};
+  const doc = yaml.load(await fsp.readFile(yml,"utf8")) || {};
+  const st  = yaml.load(await fsp.readFile(stylePath(),"utf8")) || {};
   const S0  = (st.styles && st.styles.default) || {};
   const S   = Object.assign({}, S0, (st.styles && st.styles[LANG]) || {});
 
@@ -84,10 +97,10 @@ async function main(){
   const H = S.height ?? 1920;
 
   // margins / paddings（上下左右個別）
-  const mX = (S.panel_margin_x ?? 0);      // 外側 左右
-  const mY = (S.panel_margin_y ?? 64);     // 外側 上下
-  const pX = (S.panel_padding_x ?? 64);    // 内側 左右
-  const pY = (S.panel_padding_y ?? 120);   // 内側 上下
+  const mX = (S.panel_margin_x ?? 0);      // 左右外側
+  const mY = (S.panel_margin_y ?? 64);     // 上下外側
+  const pX = (S.panel_padding_x ?? 64);    // 左右内側
+  const pY = (S.panel_padding_y ?? 120);   // 上下内側
   const panelAlpha = (S.panel_alpha ?? 0.55);
 
   // typography
@@ -95,7 +108,7 @@ async function main(){
   const iSize = S.item_size  ?? 54;
   const cSize = S.cta_size   ?? 52;
   const gap   = S.line_gap   ?? 86;
-  const titleGap = S.title_line_gap ?? 72;
+  const titleGap = S.title_line_gap    ?? 72;
   const titleBottomGap = S.title_bottom_gap ?? 64;
 
   const bullet = (S.bullet ?? "•") + " ";
@@ -105,25 +118,24 @@ async function main(){
   const iLimit = (LANG==="ja") ? (S.item_wrap_chars_ja  ?? 18) : (S.item_wrap_chars_en  ?? 36);
 
   // positions
-  const px = mX, py = mY, pw = W - mX*2, ph = H - mY*2; // panel
-  const ix = px + pX;
-  const iyTitle = py + pY;
+  const px = mX, py = mY, pw = W - mX*2, ph = H - mY*2; // black panel
+  const ix = px + pX;                                   // text left
+  const iyTitle = py + pY;                              // title top
   const iyItemsStart = iyTitle + tSize + titleGap + titleBottomGap;
-  const iyCta = py + ph - pY - cSize - 12;
+  const iyCta = py + ph - pY - cSize - 12;              // cta bottom
 
-  // out & tmp
+  // output dir & tmp text dir
   const odir = outDir(DATE, LANG);
-  await fsp.mkdir(odir, { recursive: true });
+  await fsp.mkdir(odir, { recursive:true });
   const tmpRoot = await fsp.mkdtemp(path.join(os.tmpdir(), "srshort-"));
 
-  const CH = readChannelMeta(LANG);
+  const CH = readChannelMetaKV(LANG);
 
   let idx = 0;
   for (const e of (doc.entries || [])){
     idx++;
-    const outBase = String(idx).padStart(4, "0");
-    const outMp4  = path.join(odir, `${outBase}.mp4`);
-    const outJson = path.join(odir, `${outBase}.json`);
+    const outMp4  = path.join(odir, `${String(idx).padStart(4,"0")}.mp4`);
+    const outJson = path.join(odir, `${String(idx).padStart(4,"0")}.json`);
 
     // ---- wrap
     const titleLines = wrapByLimit(String(e.title||""), tLimit, LANG==="ja");
@@ -146,7 +158,7 @@ async function main(){
       return p;
     };
 
-    // ---- filtergraph（; 区切り）
+    // ---- filtergraph
     const parts = [];
     parts.push(`[0:v]scale=${W}:${H},format=rgba,drawbox=x=${px}:y=${py}:w=${pw}:h=${ph}:color=black@${panelAlpha}:t=fill[v0]`);
 
@@ -196,21 +208,22 @@ async function main(){
     const r = spawnSync("ffmpeg", args, { stdio:"inherit" });
     if (r.status !== 0) throw new Error("ffmpeg failed");
 
-    // ---- sidecar meta（アップロード用）
-    const titleText = `${String(e.title || "Small Wins")}${CH.suffix || ""}`;
-    const tags = (Array.isArray(e.tags) && e.tags.length) ? e.tags.filter(Boolean).slice(0,10) : CH.tags;
-    const sidecar = { title: titleText, description: CH.desc, tags };
+    // ---- sidecar meta for uploader
+    const titleText = `${String(e.title||"Small Wins")}${CH.title_suffix || ""}`;
+    const tags = (Array.isArray(e.tags) && e.tags.length) ? e.tags.slice(0,10) : CH.tags;
+    const desc = CH.tags_extra ? `${CH.description}\n${CH.tags_extra}` : CH.description;
+    const sidecar = { title: titleText, description: desc, tags };
     await fsp.writeFile(outJson, JSON.stringify(sidecar, null, 2), "utf8");
 
-    // cleanup tmp
+    // cleanup temp text files
     for (const p of textFiles){ try { await fsp.unlink(p); } catch(_){} }
 
-    console.log("[mp4 ]", outMp4);
+    console.log("[mp4]", outMp4);
     console.log("[meta]", outJson);
   }
 
-  // tmp dir cleanup
-  try { await fsp.rm(tmpRoot, { recursive:true, force:true }); } catch(_) {}
+  // temp dir（空なら）削除
+  try { await fsp.rmdir(tmpRoot); } catch(_) {}
 }
 
 main().catch(e=>{ console.error(e); process.exit(1); });
