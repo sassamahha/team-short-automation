@@ -41,3 +41,8 @@ styles:
     item_size: 42
     title_wrap_chars_ja: 15
     item_wrap_chars_ja: 20
+
+  es:
+    font: "assets/fonts/NotoSans-Regular.ttf"
+    line_gap: 72
+    item_wrap_chars_es: 42
