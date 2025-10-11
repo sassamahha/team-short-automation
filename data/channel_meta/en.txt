@@ -1,9 +1,8 @@
-# title の末尾に足す（空可）
-title_suffix = ｜Small Wins ch.
-# 説明文（複数行OK。空行もOK）
-description = 📌 Daily 10s ‘Small Wins’. Save and try one today.
-# ハッシュタグは説明に各自で入れるか、ここに追記してもOK
-#tags_extra = #smallwins #mindset
 
-# カンマ区切り（最大10件利用）
+title_suffix = ｜Small Success Habits✊
+
+description = 📌 Daily 10s ‘Small Success’. Save and try one today.
+
+#tags_extra = #smallsuccess #mindset
+
 tags = small wins, mindset, self help
