@@ -8,7 +8,7 @@ styles:
     panel_margin_y: 180      # ←上下180
 
     # パネル内側パディング（上下/左右で分ける）
-    panel_padding_x: 64     # ←左右そのまま
+    panel_padding_x: 72     # ←左右そのまま
     panel_padding_y: 120    # ←上下120
 
     panel_alpha: 0.55
