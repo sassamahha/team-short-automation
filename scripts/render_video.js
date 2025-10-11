@@ -128,8 +128,12 @@ async function main(){
   const bullet = (S.bullet ?? "•") + " ";
   const font   = S.font || (LANG==="ja" ? "assets/fonts/NotoSansJP-Regular.ttf" : "assets/fonts/NotoSans-Regular.ttf");
 
-  const tLimit = (LANG==="ja") ? (S.title_wrap_chars_ja ?? 16) : (S.title_wrap_chars_en ?? 28);
-  const iLimit = (LANG==="ja") ? (S.item_wrap_chars_ja  ?? 18) : (S.item_wrap_chars_en  ?? 36);
+  const tLimit =
+    S[`title_wrap_chars_${LANG}`] ??
+    (LANG === "ja" ? (S.title_wrap_chars_ja ?? 16) : (S.title_wrap_chars_en ?? 28));
+  const iLimit =
+    S[`item_wrap_chars_${LANG}`] ??
+    (LANG === "ja" ? (S.item_wrap_chars_ja ?? 18) : (S.item_wrap_chars_en ?? 36));
 
   // positions
   const px = mX, py = mY, pw = W - mX*2, ph = H - mY*2; // black panel
