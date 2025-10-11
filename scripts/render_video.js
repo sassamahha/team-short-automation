@@ -47,7 +47,7 @@ function wrapByLimit(text, limit, isCJK){
   }
 }
 
-// ---- channel meta (key=value 形式)
+// readChannelMetaKV
 function readChannelMetaKV(lang){
   const def = {
     title_suffix: "",
@@ -58,29 +58,43 @@ function readChannelMetaKV(lang){
   const p = chMetaTxt(lang);
   if (!fs.existsSync(p)) return def;
 
-  const lines = fs.readFileSync(p, "utf8").split(/\r?\n/);
+  const raw = fs.readFileSync(p, "utf8").replace(/^\uFEFF/, ""); // BOM除去
+  const lines = raw.split(/\r?\n/);
+
   let curKey = null;
-  for (let raw of lines){
-    const line = raw.replace(/^\uFEFF/, "").trim(); // strip BOM / trim
-    if (!line || line.startsWith("#")) continue;
-    const m = line.match(/^([a-zA-Z_]+)\s*=\s*(.*)$/);
-    if (m){
+  for (let line of lines){
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+
+    // key = value 形式だけを拾う
+    const m = trimmed.match(/^([a-zA-Z_]+)\s*=\s*(.*)$/);
+    if (m) {
       curKey = m[1];
-      const v = m[2];
+      let v = m[2];
+
+      // “うっかり key= が本文に混ざっている”事故の予防：左辺を剥がす
+      v = v.replace(/^\s*(title_suffix|description|tags|tags_extra)\s*=\s*/i, "");
+
       if (curKey === "title_suffix") def.title_suffix = v;
       else if (curKey === "description") def.description = v;
-      else if (curKey === "tags"){
-        def.tags = v.split(",").map(s=>s.trim()).filter(Boolean).slice(0,10);
-      } else if (curKey === "tags_extra"){
-        def.tags_extra = v;
-      }
+      else if (curKey === "tags") def.tags = v.split(",").map(s=>s.trim()).filter(Boolean).slice(0,10);
+      else if (curKey === "tags_extra") def.tags_extra = v;
       continue;
     }
-    // description の複数行対応
-    if (curKey === "description") def.description += "\n" + raw;
+
+    // description の複数行追記（キー行で始まっていないものだけ）
+    if (curKey === "description") {
+      def.description += "\n" + line;
+    }
   }
+
+  // 仕上げのクレンジング：念のため “xxx = ” が残っていたら除去
+  def.description = def.description.replace(/^\s*(title_suffix|description)\s*=\s*/i, "").trim();
+  def.title_suffix = def.title_suffix.replace(/^\s*title_suffix\s*=\s*/i, "").trim();
+
   return def;
 }
+
 
 async function main(){
   // ---- load contents / style
@@ -209,11 +223,21 @@ async function main(){
     if (r.status !== 0) throw new Error("ffmpeg failed");
 
     // ---- sidecar meta for uploader
-    const titleText = `${String(e.title||"Small Wins")}${CH.title_suffix || ""}`;
+    // …(ffmpeg 実行の後)
+
+    const titleText = `${String(e.title || "Small Wins")}${CH.title_suffix || ""}`;
     const tags = (Array.isArray(e.tags) && e.tags.length) ? e.tags.slice(0,10) : CH.tags;
-    const desc = CH.tags_extra ? `${CH.description}\n${CH.tags_extra}` : CH.description;
+    
+    // 追加のハッシュ等があれば後ろに連結
+    let desc = CH.description;
+    if (CH.tags_extra) desc = `${desc}\n${CH.tags_extra}`;
+    
+    // 最終の安全消し（念押し）
+    desc = desc.replace(/^\s*(title_suffix|description)\s*=\s*/i, "").trim();
+    
     const sidecar = { title: titleText, description: desc, tags };
     await fsp.writeFile(outJson, JSON.stringify(sidecar, null, 2), "utf8");
+
 
     // cleanup temp text files
     for (const p of textFiles){ try { await fsp.unlink(p); } catch(_){} }
