@@ -1,4 +1,4 @@
-name: Post EN from Stock
+name: Post EN
 
 on:
   workflow_dispatch: {}
