@@ -34,7 +34,7 @@ function parseCats(arg){
     const w = Math.max(1, parseInt(wRaw||"1",10));
     m[name] = w;
   });
-  return m; // { habits8:2, steady:1 }
+  return m; // { habits8:1, steady:1, sleep:1 }
 }
 
 async function listCategories(){
