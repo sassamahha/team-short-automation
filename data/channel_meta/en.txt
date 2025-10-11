@@ -1,7 +1,7 @@
 
-title_suffix = ｜Small Success Habits✊
+title_suffix = ｜Small Success Habits
 
-description = 📌 Daily 10s ‘Small Success’. Save and try one today.
+description = Daily 10s ‘Small Success’ Save and try one today.
 
 #tags_extra = #smallsuccess #mindset
 
