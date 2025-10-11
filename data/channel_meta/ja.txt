@@ -1,4 +1,4 @@
 title_suffix = ｜小さな成功習慣ch.
-description = 毎日10秒。“ひと手”で前進。今日1つ試そう。
+description = 毎日10秒。“コツコツ”前進。今日1つ試そう。
 #tags_extra = #小さな成功 #自己管理
 tags = 小さな成功, 自己管理, メンタル, 習慣
