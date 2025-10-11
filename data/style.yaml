@@ -5,7 +5,7 @@ styles:
 
     # 画面外側マージン（上下/左右で分ける）
     panel_margin_x: 0       # ←左右なし
-    panel_margin_y: 64      # ←上下64
+    panel_margin_y: 180      # ←上下180
 
     # パネル内側パディング（上下/左右で分ける）
     panel_padding_x: 64     # ←左右そのまま
