@@ -18,9 +18,9 @@ const clamp = (s, n) => (s && s.length > n ? s.slice(0, n) : s);
 async function readChannelMeta(lang) {
   const p = path.join("data", "channel_meta", `${lang}.txt`);
   const out = {
-    title_suffix: "",                              // 例: "｜小さく勝つ習慣 ch."
-    description: "📌 Daily 10s ‘Small Wins’. Save and try one today.", // デフォルト
-    tags: ["small wins", "mindset", "self help"],
+    title_suffix: "",                          
+    description: "📌 Daily 10s ‘Small Success’. Save and try one today.", // デフォルト
+    tags: ["small success", "mindset", "self help"],
     tags_extra: "",
   };
   if (!fs.existsSync(p)) return out;
