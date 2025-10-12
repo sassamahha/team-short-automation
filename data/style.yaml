@@ -46,3 +46,8 @@ styles:
     font: "assets/fonts/NotoSans-Regular.ttf"
     line_gap: 72
     item_wrap_chars_es: 42
+
+  pt:
+    font: "assets/fonts/NotoSans-Regular.ttf"
+    line_gap: 72
+    item_wrap_chars_es: 42
