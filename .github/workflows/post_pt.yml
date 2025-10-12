@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions: { contents: write }
     env:
-      LANG: es  # 言語変更(2/3)
+      LANG: pt  # 言語変更(2/3)
       MAX_UPLOADS: "1"
     steps:
       - uses: actions/checkout@v4
