@@ -1,4 +1,4 @@
-name: Generate & Stock (EN,JA,ES)
+name: Generate & Stock
 
 on:
   schedule:
