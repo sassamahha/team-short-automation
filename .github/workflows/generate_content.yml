@@ -56,9 +56,9 @@ jobs:
       - name: EN -> world translate
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: node scripts/translate_yaml.js --date=${DATE} --langs=ja,es
+        run: node scripts/translate_yaml.js --date=${DATE} --langs=ja,es,pt
 
-      # ③ EN/JA をレンダリング（今日の日付で出力）
+      # ③レンダリング（今日の日付で出力）
       - name: Render videos (world)
         run: |
           IFS=',' read -ra LGS <<< "${{ env.LANGS_TO_RENDER }}"
