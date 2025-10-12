@@ -31,7 +31,7 @@ const guardPath = ()=> path.join("data","lang_rules.yaml");
 // -------- helpers
 function langDisplayName(code){
   // 簡易マップ（無ければコードをそのまま渡す）
-  const map = { ja:"Japanese", es:"Spanish", fr:"French", de:"German", it:"Italian", pt:"Portuguese",
+  const map = { ja:"Japanese", es:"Spanish", fr:"French", de:"German", it:"Italian", pt:"Portuguese (Brazil)",
                 id:"Indonesian", hi:"Hindi", ko:"Korean", zh:"Chinese", ru:"Russian", ar:"Arabic", he:"Hebrew",
                 th:"Thai", vi:"Vietnamese" };
   return map[code] || code;
