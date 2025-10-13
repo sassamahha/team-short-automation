@@ -35,13 +35,14 @@ styles:
     font: "assets/fonts/NotoSans-Regular.ttf"
     bullet: "•"
     line_gap: 72
+    item_wrap_chars_en: 42
 
   ja:
     font: "assets/fonts/NotoSansJP-Regular.ttf"
     bullet: "・"
     item_size: 42
     title_wrap_chars_ja: 15
-    item_wrap_chars_ja: 20
+    item_wrap_chars_ja: 21
 
   es:
     font: "assets/fonts/NotoSans-Regular.ttf"
