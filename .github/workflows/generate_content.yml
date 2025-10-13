@@ -7,7 +7,7 @@ on:
     inputs:
       count:
         description: "How many entries to generate"
-        default: "3"
+        default: "5"
 
 concurrency:
   group: gen-stock
@@ -19,10 +19,10 @@ jobs:
     permissions:
       contents: write
     env:
-      COUNT: ${{ github.event.inputs.count || '3' }}
+      COUNT: ${{ github.event.inputs.count || '5' }}
       DURATION: "10"
       BG: assets/bg/loop.mp4
-      AUDIO: assets/bgm/ambient01.mp3
+      AUDIO: assets/bgm
       LANGS_TO_RENDER: "en,ja,es,pt" # ＜言語毎に追加(1/2)
 
     steps:
