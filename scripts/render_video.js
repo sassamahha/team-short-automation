@@ -125,6 +125,44 @@ function fontFor(lang, styleFont){
   ]);
 }
 
+// --- BGM picker -------------------------------------------------------------
+function pickRandom(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
+
+/**
+ * AUDIO 引数/環境変数の意味:
+ *  - 実ファイル: そのまま使用
+ *  - ディレクトリ: そのディレクトリ内の音声ファイルからランダム
+ *  - ワイルドカード: 例 "assets/bgm/ambient*.mp3" にマッチする中からランダム
+ *  - "random": デフォルト "assets/bgm" からランダム
+ */
+function pickAudioPath(audioSetting){
+  let p = String(audioSetting || "").trim();
+  const exts = /\.(mp3|wav|m4a|aac|ogg)$/i;
+
+  // "random" は既定ディレクトリから
+  if (!p || p.toLowerCase() === "random") p = "assets/bgm";
+
+  // ディレクトリ指定
+  if (fs.existsSync(p) && fs.statSync(p).isDirectory()){
+    const files = fs.readdirSync(p).filter(f => exts.test(f));
+    if (files.length) return path.join(p, pickRandom(files));
+  }
+
+  // ワイルドカード（同一ディレクトリ内のみ対応）
+  if (/\*/.test(p)){
+    const dir = path.dirname(p);
+    const pat = new RegExp("^" + path.basename(p)
+      .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+      .replace(/\*/g, ".*") + "$", "i");
+    const files = fs.readdirSync(dir).filter(f => pat.test(f));
+    if (files.length) return path.join(dir, pickRandom(files));
+  }
+
+  // ここまで来たら“実ファイル or 不明”。そのまま返す
+  return p;
+}
+
+
 // ---- main
 (async function main(){
   const yml = yamlPath(DATE, LANG);
@@ -251,8 +289,12 @@ function fontFor(lang, styleFont){
       ? ["-loop","1","-t", String(DUR), "-i", BG]
       : ["-stream_loop","-1","-t", String(DUR), "-i", BG];
 
-    const audioArgs = (AUDIO && fs.existsSync(AUDIO))
-      ? ["-i", AUDIO]
+    const chosenAudio = pickAudioPath(AUDIO);
+    if (chosenAudio && fs.existsSync(chosenAudio)) {
+      console.log("[bgm]", path.basename(chosenAudio));
+    }
+    const audioArgs = (chosenAudio && fs.existsSync(chosenAudio))
+      ? ["-i", chosenAudio]
       : ["-f","lavfi","-t", String(DUR), "-i","anullsrc=cl=stereo:r=44100"];
 
     // ---- ffmpeg
