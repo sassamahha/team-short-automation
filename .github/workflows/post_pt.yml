@@ -3,9 +3,11 @@ name: Post PT
 on:
   workflow_dispatch: {}
   schedule:
-    - cron: "5 10 * * *"  # 07:05 BRT 10:05 UTC
-    - cron: "5 16 * * *"  # 13:05 BRT 16:05 UTC
-    - cron: "5 22 * * *"  # 19:05 BRT 22:05 UTC
+    - cron: "11 0 * * *"   # 00:11 UTC
+    - cron: "11 5 * * *"   # 05:11 UTC
+    - cron: "11 10 * * *"  # 10:11 UTC
+    - cron: "11 15 * * *"  # 15:11 UTC
+    - cron: "11 20 * * *"  # 20:11 UTC
 
 
 concurrency:
