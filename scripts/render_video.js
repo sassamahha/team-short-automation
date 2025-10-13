@@ -1,9 +1,9 @@
-// scripts/render_video.js
-// YAML + style -> videos/{lang}/queue/YYYY-MM-DD/####.mp4 (+ ####.json sidecar)
-// - drawtext は textfile=... を使用（エスケープ事故防止）
-// - フィルタグラフは ; 区切りで 1 本の -filter_complex
-// - style.yaml の panel_margin/padding 指定（上下左右個別）に対応
-// - アップロード用メタ (title/description/tags) を sidecar JSON に保存
+// YAML + style -> videos/{lang}/queue/YYYY-MM-DD/####.mp4 (+ ####.json)
+// 安全版: textfile=… を使い、UTF-8/BOM/不可視制御/フォント欠落に強い。
+// - フォントは assets -> /usr/share/fonts の順で多段フォールバック
+// - テキストは正規化＆クレンジング
+// - drawtext は text_shaping=1:utf8=1 を明示
+
 const fs = require("fs");
 const fsp = fs.promises;
 const path = require("path");
@@ -12,11 +12,15 @@ const yaml = require("js-yaml");
 const { spawnSync } = require("child_process");
 
 // ---- args / env
-const LANG  = (process.argv.find(a=>a.startsWith("--lang="))  || "").split("=")[1] || "en";
-const DATE  = (process.argv.find(a=>a.startsWith("--date="))  || "").split("=")[1] || new Date().toISOString().slice(0,10);
-const DUR   = (process.argv.find(a=>a.startsWith("--dur="))   || "").split("=")[1] || (process.env.DURATION || "10");
-const BG    = (process.argv.find(a=>a.startsWith("--bg="))    || "").split("=")[1] || "assets/bg/loop.mp4";
-const AUDIO = (process.argv.find(a=>a.startsWith("--audio=")) || "").split("=")[1] || "assets/bgm/ambient01.mp3";
+const ARG = (k, def="") => {
+  const m = process.argv.find(a => a.startsWith(`--${k}=`));
+  return m ? m.split("=")[1] : def;
+};
+const LANG  = ARG("lang", "en");
+const DATE  = ARG("date", new Date().toISOString().slice(0,10));
+const DUR   = ARG("dur",  process.env.DURATION || "10");
+const BG    = ARG("bg",   "assets/bg/loop.mp4");
+const AUDIO = ARG("audio","assets/bgm/ambient01.mp3");
 
 // ---- paths
 const yamlPath  = (d,lang)=> path.join("data", lang, `${d}.yaml`);
@@ -24,18 +28,27 @@ const stylePath = ()          => path.join("data","style.yaml");
 const outDir    = (d,lang)=>   path.join("videos", lang, "queue", d);
 const chMetaTxt = (lang)=>     path.join("data","channel_meta",`${lang}.txt`);
 
-// ---- util: simple wrapping (EN=word, CJK=char)
+// ---- text utils
+const toASCIIQuotes = s => String(s||"")
+  .replace(/[“”]/g,'"').replace(/[‘’]/g,"'")
+  .replace(/\u00A0/g," "); // NBSP -> space
+const stripControls = s => String(s||"").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g,"");
+const stripBOM = s => s.replace(/^\uFEFF/, "");
+const normalize = s => stripControls(toASCIIQuotes(stripBOM(String(s||"")))).normalize("NFC");
+
+// ---- simple wrapping（EN等=単語 / CJK=字数）
 function wrapByLimit(text, limit, isCJK){
-  if (!text) return [""];
+  const t = normalize(text);
+  if (!t) return [""];
   if (isCJK){
     const lines=[]; let cur="";
-    for (const ch of text){
+    for (const ch of t){
       if (cur.length>=limit){ lines.push(cur); cur=ch; } else cur+=ch;
     }
     if (cur) lines.push(cur);
     return lines;
   } else {
-    const words = String(text).trim().split(/\s+/);
+    const words = t.split(/\s+/).filter(Boolean);
     const lines=[]; let cur="";
     for (const w of words){
       const next = (cur?cur+" ":"")+w;
@@ -47,7 +60,7 @@ function wrapByLimit(text, limit, isCJK){
   }
 }
 
-// readChannelMetaKV
+// ---- channel meta (KV)
 function readChannelMetaKV(lang){
   const def = {
     title_suffix: "",
@@ -58,46 +71,62 @@ function readChannelMetaKV(lang){
   const p = chMetaTxt(lang);
   if (!fs.existsSync(p)) return def;
 
-  const raw = fs.readFileSync(p, "utf8").replace(/^\uFEFF/, ""); // BOM除去
+  const raw = stripBOM(fs.readFileSync(p, "utf8"));
   const lines = raw.split(/\r?\n/);
-
   let curKey = null;
   for (let line of lines){
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-
-    // key = value 形式だけを拾う
-    const m = trimmed.match(/^([a-zA-Z_]+)\s*=\s*(.*)$/);
+    const s = line.trim();
+    if (!s || s.startsWith("#")) continue;
+    const m = s.match(/^([a-zA-Z_]+)\s*=\s*(.*)$/);
     if (m) {
       curKey = m[1];
-      let v = m[2];
-
-      // “うっかり key= が本文に混ざっている”事故の予防：左辺を剥がす
-      v = v.replace(/^\s*(title_suffix|description|tags|tags_extra)\s*=\s*/i, "");
-
+      let v = m[2].replace(/^\s*(title_suffix|description|tags|tags_extra)\s*=\s*/i,"");
       if (curKey === "title_suffix") def.title_suffix = v;
       else if (curKey === "description") def.description = v;
-      else if (curKey === "tags") def.tags = v.split(",").map(s=>s.trim()).filter(Boolean).slice(0,10);
+      else if (curKey === "tags") def.tags = v.split(",").map(x=>x.trim()).filter(Boolean).slice(0,10);
       else if (curKey === "tags_extra") def.tags_extra = v;
       continue;
     }
-
-    // description の複数行追記（キー行で始まっていないものだけ）
-    if (curKey === "description") {
-      def.description += "\n" + line;
-    }
+    if (curKey === "description") def.description += "\n" + line;
   }
-
-  // 仕上げのクレンジング：念のため “xxx = ” が残っていたら除去
-  def.description = def.description.replace(/^\s*(title_suffix|description)\s*=\s*/i, "").trim();
-  def.title_suffix = def.title_suffix.replace(/^\s*title_suffix\s*=\s*/i, "").trim();
-
+  def.description = def.description.replace(/^\s*(title_suffix|description)\s*=\s*/i,"").trim();
+  def.title_suffix = def.title_suffix.replace(/^\s*title_suffix\s*=\s*/i,"").trim();
   return def;
 }
 
+// ---- font resolver（多段フォールバック）
+function firstExisting(paths){
+  for (const p of paths){
+    if (p && fs.existsSync(p)) return p;
+  }
+  return null;
+}
+function fontFor(lang, styleFont){
+  // 1) style.yaml 指定 2) assets 同梱 3) Ubuntu の Noto 4) DejaVu
+  const assets = {
+    ja: "assets/fonts/NotoSansJP-Regular.ttf",
+    en: "assets/fonts/NotoSans-Regular.ttf",
+    es: "assets/fonts/NotoSans-Regular.ttf",
+    pt: "assets/fonts/NotoSans-Regular.ttf"
+  };
+  const sysNoto = [
+    "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
+    "/usr/share/fonts/truetype/noto/NotoSansDisplay-Regular.ttf",
+    "/usr/share/fonts/truetype/noto/NotoSansJP-Regular.otf",
+  ];
+  const sysDejavu = ["/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"];
 
-async function main(){
-  // ---- load contents / style
+  return firstExisting([
+    styleFont,
+    assets[lang],
+    assets.en,
+    ...sysNoto,
+    ...sysDejavu
+  ]);
+}
+
+// ---- main
+(async function main(){
   const yml = yamlPath(DATE, LANG);
   if (!fs.existsSync(yml)) throw new Error(`content not found: ${yml}`);
 
@@ -110,39 +139,40 @@ async function main(){
   const W = S.width ?? 1080;
   const H = S.height ?? 1920;
 
-  // margins / paddings（上下左右個別）
-  const mX = (S.panel_margin_x ?? 0);      // 左右外側
-  const mY = (S.panel_margin_y ?? 64);     // 上下外側
-  const pX = (S.panel_padding_x ?? 64);    // 左右内側
-  const pY = (S.panel_padding_y ?? 120);   // 上下内側
-  const panelAlpha = (S.panel_alpha ?? 0.55);
+  // margins / paddings
+  const mX = S.panel_margin_x ?? 0;
+  const mY = S.panel_margin_y ?? 64;
+  const pX = S.panel_padding_x ?? 64;
+  const pY = S.panel_padding_y ?? 120;
+  const panelAlpha = S.panel_alpha ?? 0.55;
 
   // typography
   const tSize = S.title_size ?? 88;
   const iSize = S.item_size  ?? 54;
   const cSize = S.cta_size   ?? 52;
   const gap   = S.line_gap   ?? 86;
-  const titleGap = S.title_line_gap    ?? 72;
+  const titleGap = S.title_line_gap ?? 72;
   const titleBottomGap = S.title_bottom_gap ?? 64;
 
   const bullet = (S.bullet ?? "•") + " ";
-  const font   = S.font || (LANG==="ja" ? "assets/fonts/NotoSansJP-Regular.ttf" : "assets/fonts/NotoSans-Regular.ttf");
 
-  const tLimit =
-    S[`title_wrap_chars_${LANG}`] ??
-    (LANG === "ja" ? (S.title_wrap_chars_ja ?? 16) : (S.title_wrap_chars_en ?? 28));
-  const iLimit =
-    S[`item_wrap_chars_${LANG}`] ??
-    (LANG === "ja" ? (S.item_wrap_chars_ja ?? 18) : (S.item_wrap_chars_en ?? 36));
+  // ----- font
+  const fontPath = fontFor(LANG, S.font);
+  if (!fontPath) throw new Error("No usable font found. Put NotoSans in assets/fonts or install Noto/DejaVu.");
+  const isCJK = LANG === "ja" || LANG === "zh" || LANG === "ko";
+
+  // wrap limits（per lang override → EN/JA の既定）
+  const tLimit = S[`title_wrap_chars_${LANG}`] ?? (isCJK ? (S.title_wrap_chars_ja ?? 16) : (S.title_wrap_chars_en ?? 28));
+  const iLimit = S[`item_wrap_chars_${LANG}`]  ?? (isCJK ? (S.item_wrap_chars_ja  ?? 18) : (S.item_wrap_chars_en  ?? 36));
 
   // positions
-  const px = mX, py = mY, pw = W - mX*2, ph = H - mY*2; // black panel
-  const ix = px + pX;                                   // text left
-  const iyTitle = py + pY;                              // title top
+  const px = mX, py = mY, pw = W - mX*2, ph = H - mY*2;
+  const ix = px + pX;
+  const iyTitle = py + pY;
   const iyItemsStart = iyTitle + tSize + titleGap + titleBottomGap;
-  const iyCta = py + ph - pY - cSize - 12;              // cta bottom
+  const iyCta = py + ph - pY - cSize - 12;
 
-  // output dir & tmp text dir
+  // dirs
   const odir = outDir(DATE, LANG);
   await fsp.mkdir(odir, { recursive:true });
   const tmpRoot = await fsp.mkdtemp(path.join(os.tmpdir(), "srshort-"));
@@ -155,52 +185,65 @@ async function main(){
     const outMp4  = path.join(odir, `${String(idx).padStart(4,"0")}.mp4`);
     const outJson = path.join(odir, `${String(idx).padStart(4,"0")}.json`);
 
-    // ---- wrap
-    const titleLines = wrapByLimit(String(e.title||""), tLimit, LANG==="ja");
-    const rawItems   = (e.items || []).map(s=>String(s||"").trim()).filter(Boolean).slice(0,8);
-
+    // ---- wrap/clean
+    const titleLines = wrapByLimit(normalize(e.title||""), tLimit, isCJK);
+    const rawItems = (Array.isArray(e.items) ? e.items : []).map(s=>normalize(s)).filter(Boolean).slice(0, 12);
     const itemLines=[];
-    const indent = (LANG==="ja") ? "　" : "   ";
+    const indent = isCJK ? "　" : "   ";
     for (const it of rawItems){
-      const arr = wrapByLimit(it, iLimit, LANG==="ja");
+      const arr = wrapByLimit(it, iLimit, isCJK);
       arr.forEach((line, li)=> itemLines.push(li===0 ? (bullet+line) : (indent+line)));
     }
-    const ctaLine = String(e.cta || "Save and try one today");
+    const ctaLine = normalize(e.cta || "Save and try one today");
 
     // ---- textfiles
     const textFiles = [];
     const makeTxt = async (base, txt)=>{
       const p = path.join(tmpRoot, `${base}.txt`);
-      await fsp.writeFile(p, txt, "utf8");
+      // 明示的に LF & UTF-8 (BOMなし)
+      await fsp.writeFile(p, txt.replace(/\r\n/g,"\n"), { encoding:"utf8", flag:"w" });
       textFiles.push(p);
       return p;
     };
 
     // ---- filtergraph
     const parts = [];
+    // 背景+パネル
     parts.push(`[0:v]scale=${W}:${H},format=rgba,drawbox=x=${px}:y=${py}:w=${pw}:h=${ph}:color=black@${panelAlpha}:t=fill[v0]`);
 
-    // title lines
+    // タイトル
     const titleLineSpace = Math.max(0, titleGap - tSize + 10);
     let vi = 0;
     for (let k=0; k<titleLines.length; k++){
       const tf = await makeTxt(`title_${idx}_${k}`, titleLines[k]);
       const y  = `${iyTitle}+${k}*(${tSize}+${titleLineSpace})`;
-      parts.push(`[v${vi}]drawtext=fontfile=${font}:textfile=${tf}:x=${ix}:y=${y}:fontsize=${tSize}:fontcolor=white:shadowcolor=black@0.6:shadowx=2:shadowy=2[v${vi+1}]`);
+      parts.push(
+        `[v${vi}]drawtext=fontfile=${fontPath}:textfile=${tf}:x=${ix}:y=${y}:fontsize=${tSize}:fontcolor=white:` +
+        `shadowcolor=black@0.6:shadowx=2:shadowy=2:text_shaping=1:fontcolor_expr=white:utf8=1[v${vi+1}]`
+      );
       vi++;
     }
-    // items
+
+    // 箇条書き
     for (let k=0; k<itemLines.length; k++){
       const tf = await makeTxt(`item_${idx}_${k}`, itemLines[k]);
       const y  = `${iyItemsStart}+${k}*${gap}`;
-      parts.push(`[v${vi}]drawtext=fontfile=${font}:textfile=${tf}:x=${ix}:y=${y}:fontsize=${iSize}:fontcolor=white:shadowcolor=black@0.5:shadowx=1:shadowy=1[v${vi+1}]`);
+      parts.push(
+        `[v${vi}]drawtext=fontfile=${fontPath}:textfile=${tf}:x=${ix}:y=${y}:fontsize=${iSize}:fontcolor=white:` +
+        `shadowcolor=black@0.5:shadowx=1:shadowy=1:text_shaping=1:utf8=1[v${vi+1}]`
+      );
       vi++;
     }
+
     // CTA
     {
       const tf = await makeTxt(`cta_${idx}`, ctaLine);
-      parts.push(`[v${vi}]drawtext=fontfile=${font}:textfile=${tf}:x=(w-text_w)/2:y=${iyCta}:fontsize=${cSize}:fontcolor=0xE0FFC8:box=1:boxcolor=black@0.55:boxborderw=24[v]`);
+      parts.push(
+        `[v${vi}]drawtext=fontfile=${fontPath}:textfile=${tf}:x=(w-text_w)/2:y=${iyCta}:fontsize=${cSize}:fontcolor=0xE0FFC8:` +
+        `box=1:boxcolor=black@0.55:boxborderw=24:text_shaping=1:utf8=1[v]`
+      );
     }
+
     const filtergraph = parts.join(";");
 
     // ---- inputs
@@ -212,7 +255,7 @@ async function main(){
       ? ["-i", AUDIO]
       : ["-f","lavfi","-t", String(DUR), "-i","anullsrc=cl=stereo:r=44100"];
 
-    // ---- run ffmpeg
+    // ---- ffmpeg
     const args = [
       "-y",
       ...bgArgs,
@@ -223,35 +266,27 @@ async function main(){
       "-r","30","-c:v","libx264","-pix_fmt","yuv420p","-c:a","aac",
       outMp4
     ];
-    const r = spawnSync("ffmpeg", args, { stdio:"inherit" });
-    if (r.status !== 0) throw new Error("ffmpeg failed");
 
-    // ---- sidecar meta for uploader
-    // …(ffmpeg 実行の後)
+    const r = spawnSync("ffmpeg", args, { stdio: "inherit" });
+    if (r.status !== 0) {
+      console.error("[font]", fontPath);
+      console.error("[texts]", textFiles);
+      throw new Error("ffmpeg failed");
+    }
 
-    const titleText = `${String(e.title || "Small Wins")}${CH.title_suffix || ""}`;
+    // ---- sidecar
+    const titleText = `${normalize(e.title || "Small Wins")}${CH.title_suffix || ""}`;
     const tags = (Array.isArray(e.tags) && e.tags.length) ? e.tags.slice(0,10) : CH.tags;
-    
-    // 追加のハッシュ等があれば後ろに連結
-    let desc = CH.description;
-    if (CH.tags_extra) desc = `${desc}\n${CH.tags_extra}`;
-    
-    // 最終の安全消し（念押し）
-    desc = desc.replace(/^\s*(title_suffix|description)\s*=\s*/i, "").trim();
-    
+    let desc = CH.description; if (CH.tags_extra) desc += `\n${CH.tags_extra}`;
+    desc = normalize(desc).replace(/^\s*(title_suffix|description)\s*=\s*/i,"").trim();
     const sidecar = { title: titleText, description: desc, tags };
     await fsp.writeFile(outJson, JSON.stringify(sidecar, null, 2), "utf8");
 
-
-    // cleanup temp text files
+    // cleanup
     for (const p of textFiles){ try { await fsp.unlink(p); } catch(_){} }
-
     console.log("[mp4]", outMp4);
     console.log("[meta]", outJson);
   }
 
-  // temp dir（空なら）削除
   try { await fsp.rmdir(tmpRoot); } catch(_) {}
-}
-
-main().catch(e=>{ console.error(e); process.exit(1); });
+})().catch(e=>{ console.error(e); process.exit(1); });
