@@ -1,9 +1,11 @@
 // scripts/seed_to_yaml.js
-// Seeds (optionally by categories with weights) -> EN master YAML (random, non-repeating)
+// Seeds (by categories/weights) -> EN master YAML (robust)
+// - JSON strict 出力 + バリデーション + リトライ + フォールバック
 // usage:
 //   node scripts/seed_to_yaml.js --count=3
 //   node scripts/seed_to_yaml.js --count=5 --cats=habits8,steady
 //   node scripts/seed_to_yaml.js --count=5 --cats=habits8:2,steady:1
+//
 // env: OPENAI_API_KEY (required), OPENAI_MODEL (optional; default gpt-4o-mini)
 
 const fs = require("fs");
@@ -15,8 +17,6 @@ const { OpenAI } = require("openai");
 const MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 const TODAY = new Date().toISOString().slice(0,10);
 const COUNT = parseInt((process.argv.find(a=>a.startsWith("--count="))||"").split("=")[1] || "3", 10);
-
-// --cats=catA,catB  or  --cats=catA:2,catB:1
 const CATS_ARG = (process.argv.find(a=>a.startsWith("--cats="))||"").split("=")[1] || "";
 
 const POOL_ROOT = path.join("data","seeds");
@@ -25,22 +25,23 @@ const USED_FILE = path.join(STATE_DIR, "used_seeds.json");
 
 function outPathEN(date){ return path.join("data","en",`${date}.yaml`); }
 function unique(arr){ return [...new Set(arr)]; }
+const stripCtrl = s => String(s||"").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g,"");
+const clean = s => stripCtrl(String(s||"").replace(/\u00A0/g," ")).trim();
 
 function parseCats(arg){
-  if (!arg) return null; // 全カテゴリ
+  if (!arg) return null;
   const m = {};
   arg.split(",").map(s=>s.trim()).filter(Boolean).forEach(tok=>{
     const [name,wRaw] = tok.split(":");
     const w = Math.max(1, parseInt(wRaw||"1",10));
     m[name] = w;
   });
-  return m; // { habits8:1, steady:1, sleep:1 }
+  return m;
 }
 
 async function listCategories(){
   if (!fs.existsSync(POOL_ROOT)) return [];
-  return fs.readdirSync(POOL_ROOT)
-    .filter(d => fs.statSync(path.join(POOL_ROOT,d)).isDirectory());
+  return fs.readdirSync(POOL_ROOT).filter(d => fs.statSync(path.join(POOL_ROOT,d)).isDirectory());
 }
 
 async function loadPoolByCategory(cat){
@@ -51,24 +52,18 @@ async function loadPoolByCategory(cat){
   for (const f of files){
     const txt = await fsp.readFile(path.join(dir,f),"utf8");
     const arr = txt.split(/\r?\n/).map(s=>s.trim()).filter(s=>s && !s.startsWith("#"));
-    // seed文面にカテゴリを結合して一意管理
     lines.push(...arr.map(x => ({ text:x, cat })));
   }
-  // 重複テキストでもカテゴリが違えば別物として扱う
-  // 同一カテゴリ内の重複は落とす
-  const seen = new Set();
-  const out = [];
+  const seen = new Set(); const out=[];
   for (const it of lines){
-    const key = it.text; // 同カテゴリ内は text 一意
+    const key = it.text;
     if (seen.has(key)) continue;
-    seen.add(key);
-    out.push(it);
+    seen.add(key); out.push(it);
   }
   return out;
 }
 
 async function loadPoolFiltered(catsWeights){
-  // catsWeights=null のとき、全カテゴリ対象
   const cats = catsWeights ? Object.keys(catsWeights) : await listCategories();
   let pool = [];
   for (const c of cats){
@@ -91,130 +86,148 @@ function buildRemaining(pool, used){
   return pool.filter(s => !usedSet.has(`${s.cat}::${s.text}`));
 }
 
-// 重み付きサンプリング（カテゴリ重み）→ カテゴリを先に引いてからそのカテゴリの未使用を1件取る
 function weightedPickCategory(remaining, catsWeights){
-  if (!catsWeights) return null; // 使わない
+  if (!catsWeights) return null;
   const byCat = {};
-  for (const it of remaining){
-    (byCat[it.cat] ||= []).push(it);
-  }
-  const entries = Object.entries(byCat).filter(([cat,arr]) => arr.length>0);
+  for (const it of remaining){ (byCat[it.cat] ||= []).push(it); }
+  const entries = Object.entries(byCat).filter(([_,arr])=>arr.length>0);
   if (!entries.length) return null;
-
-  // 重み表（カテゴリ未指定は重み=1）
-  const weighted = [];
-  for (const [cat, arr] of entries){
-    const w = (catsWeights[cat] || 1);
-    if (w <= 0) continue;
-    weighted.push({ cat, weight:w, size:arr.length });
-  }
-  if (!weighted.length) return null;
-
+  const weighted = entries.map(([cat]) => ({ cat, weight: catsWeights[cat] || 1 }));
   const sum = weighted.reduce((a,b)=>a+b.weight,0);
   let r = Math.random() * sum;
-  for (const w of weighted){
-    if ((r -= w.weight) <= 0) return w.cat;
-  }
+  for (const w of weighted){ if ((r -= w.weight) <= 0) return w.cat; }
   return weighted[weighted.length-1].cat;
 }
-
 function pickOneFromCategory(remaining, cat){
   const arr = remaining.filter(s => s.cat === cat);
   if (!arr.length) return null;
-  const i = Math.floor(Math.random()*arr.length);
-  return arr[i];
+  return arr[Math.floor(Math.random()*arr.length)];
 }
-
 function sampleWithCategoryWeights(pool, count, catsWeights){
-  const picks = [];
-  let remaining = pool.slice();
-
+  const picks = []; let remaining = pool.slice();
   while (picks.length < Math.min(count, pool.length)){
-    // 1) 重みでカテゴリを選ぶ（未指定なら null）
     let chosenCat = weightedPickCategory(remaining, catsWeights);
-
-    // 2) カテゴリ未指定 or そのカテゴリが空：全体からランダム
-    let pick = null;
-    if (!chosenCat){
-      const i = Math.floor(Math.random()*remaining.length);
-      pick = remaining[i];
-    }else{
-      pick = pickOneFromCategory(remaining, chosenCat) || remaining[Math.floor(Math.random()*remaining.length)];
-    }
-
-    // 3) 追加 & remaining から除外
+    let pick = chosenCat
+      ? (pickOneFromCategory(remaining, chosenCat) || remaining[Math.floor(Math.random()*remaining.length)])
+      : remaining[Math.floor(Math.random()*remaining.length)];
     picks.push(pick);
     remaining = remaining.filter(s => !(s.cat===pick.cat && s.text===pick.text));
   }
   return picks;
 }
 
-async function askOpenAI(client, seed){
-  const prompt = `You generate content for a 10-second mindset/self-help YouTube Short.
-
-Seed (title idea, may be Japanese or English):
+// ---------- OpenAI ----------
+async function askOpenAI_JSON(client, seed){
+  const sys = "You generate concise, practical self-improvement content for 10-second YouTube Shorts.";
+  const user = `
+Seed (title idea, may be JP/EN):
 "${seed}"
 
-Write YAML with keys: title, items (exactly 8 bullets), cta, tags (2-4).
-Constraints:
-- English output only (natural and concise).
-- Bullets are concrete, ≤ 10 words, actionable.
-- Avoid vague platitudes. CTA is a short imperative line.`;
+Return STRICT JSON with keys:
+- "title" (<= 60 chars, clear, engaging)
+- "items" (array of EXACTLY 8 short bullets, each <= 10 words, concrete & actionable)
+- "cta" (very short imperative line)
+- "tags" (2-4 simple tags)
+
+Requirements:
+- Output MUST be English.
+- No markdown or code fences. JSON object only.
+  `.trim();
 
   const r = await client.chat.completions.create({
     model: MODEL,
     temperature: 0.3,
-    messages: [
-      { role: "system", content: "Output only valid YAML. No explanations." },
-      { role: "user", content: prompt }
-    ]
+    messages: [{role:"system",content:sys},{role:"user",content:user}],
+    response_format: { type: "json_object" }
   });
-  return r.choices?.[0]?.message?.content?.trim() || "";
+  return r.choices?.[0]?.message?.content || "{}";
 }
 
-function normalizeEntry(yamlStr, fallbackTitle){
-  let obj = {};
-  try { obj = yaml.load(yamlStr) || {}; } catch { obj = {}; }
+function hasCJK(s){ return /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(String(s||"")); }
+function validEnglishEntry(obj){
+  if (!obj || typeof obj !== "object") return false;
+  const title = clean(obj.title);
+  const items = Array.isArray(obj.items) ? obj.items.map(clean).filter(Boolean) : [];
+  if (!title || items.length !== 8) return false;
+  // 英語ガード（CJK が多いなら弾く）
+  if (hasCJK(title) || items.some(hasCJK)) return false;
+  return true;
+}
 
-  let items = Array.isArray(obj.items) ? obj.items.slice(0,8) : [];
-  while (items.length < 8) items.push("");
-
-  const tags = Array.isArray(obj.tags) && obj.tags.length
-    ? obj.tags.slice(0,4) : ["mindset","small wins"];
-
+// ---------- フォールバック（安全テンプレ） ----------
+const FALLBACK_ACTIONS = [
+  "Write one line in a journal",
+  "Drink a glass of water",
+  "Breathe slowly for 30 seconds",
+  "Tidy one small spot on desk",
+  "Stand and stretch your back",
+  "Send a thank-you message",
+  "Walk for two minutes",
+  "Plan one tiny next step"
+];
+function fallbackEntryFrom(seed){
+  const base = clean(seed) || "8 tiny steps to reset your day";
+  // タイトル調整
+  let title = base;
+  if (title.length > 60) title = title.slice(0,57) + "...";
+  const items = [];
+  // 8個になるまでローテーション
+  let i = 0;
+  while (items.length < 8){
+    items.push(FALLBACK_ACTIONS[i % FALLBACK_ACTIONS.length]);
+    i++;
+  }
   return {
-    title: obj.title || fallbackTitle,
+    title,
     items,
-    cta: obj.cta || "Save and try one today",
-    tags
+    cta: "Save and try one today",
+    tags: ["mindset","small wins"]
   };
+}
+
+async function generateOne(client, seed){
+  // 最大2回リトライ → フォールバック
+  for (let attempt=0; attempt<2; attempt++){
+    try{
+      const json = await askOpenAI_JSON(client, seed);
+      let obj;
+      try { obj = JSON.parse(json); } catch { obj = {}; }
+      if (!validEnglishEntry(obj)) throw new Error("validation failed");
+      // 最終整形
+      const out = {
+        title: clean(obj.title),
+        items: obj.items.map(x => clean(x)).slice(0,8),
+        cta: clean(obj.cta) || "Save and try one today",
+        tags: (Array.isArray(obj.tags) && obj.tags.length ? obj.tags : ["mindset","small wins"])
+                .map(x=>clean(x)).slice(0,4)
+      };
+      return out;
+    }catch(e){
+      // 次のループで再試行
+    }
+  }
+  // だめならフォールバック
+  return fallbackEntryFrom(seed);
 }
 
 async function main(){
   if (!process.env.OPENAI_API_KEY) throw new Error("OPENAI_API_KEY missing");
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-  const catsWeights = parseCats(CATS_ARG);                      // null or {cat:weight}
-  const poolAll = await loadPoolFiltered(catsWeights);          // [{text,cat},...]
+  const catsWeights = parseCats(CATS_ARG);
+  const poolAll = await loadPoolFiltered(catsWeights);
   if (!poolAll.length) throw new Error("no seeds found under data/seeds");
 
-  let used = await loadUsed();                                  // [{text,cat},...]
+  let used = await loadUsed();
   let remaining = buildRemaining(poolAll, used);
-  if (remaining.length < COUNT){
-    // リセット（全プールから）
-    used = [];
-    remaining = poolAll.slice();
-  }
+  if (remaining.length < COUNT){ used = []; remaining = poolAll.slice(); }
 
-  const picks = catsWeights
-    ? sampleWithCategoryWeights(remaining, COUNT, catsWeights)
-    : sampleWithCategoryWeights(remaining, COUNT, null);
+  const picks = sampleWithCategoryWeights(remaining, COUNT, catsWeights || null);
 
   const entries = [];
   for (const s of picks){
-    const y = await askOpenAI(client, s.text);
-    const norm = normalizeEntry(y, s.text);
-    entries.push(norm);
+    const e = await generateOne(client, s.text);
+    entries.push(e);
   }
 
   await fsp.mkdir(path.join("data","en"), { recursive:true });
