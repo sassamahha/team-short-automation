@@ -3,9 +3,12 @@ name: Post ES
 on:
   workflow_dispatch: {}
   schedule:
-    - cron: "5 22 * * *"  # 07:05 JST
-    - cron: "5 4 * * *"   # 13:05 JST
-    - cron: "5 10 * * *"  # 19:05 JST
+    - cron: "8 0 * * *"   # 00:08 UTC
+    - cron: "8 5 * * *"   # 05:08 UTC
+    - cron: "8 10 * * *"  # 10:08 UTC
+    - cron: "8 15 * * *"  # 15:08 UTC
+    - cron: "8 20 * * *"  # 20:08 UTC
+
 
 
 concurrency:
