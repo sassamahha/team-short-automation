@@ -3,9 +3,12 @@ name: Post JA
 on:
   workflow_dispatch: {}
   schedule:
-    - cron: "10 0 * * *"  # 09:10 JST
-    - cron: "10 6 * * *"  # 15:10 JST
-    - cron: "10 12 * * *" # 21:10 JST
+    - cron: "14 0 * * *"   # 00:14 UTC
+    - cron: "14 5 * * *"   # 05:14 UTC
+    - cron: "14 10 * * *"  # 10:14 UTC
+    - cron: "14 15 * * *"  # 15:14 UTC
+    - cron: "14 20 * * *"  # 20:14 UTC
+
 
 concurrency:
   group: post-ja
