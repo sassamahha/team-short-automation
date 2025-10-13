@@ -219,6 +219,13 @@ function pickAudioPath(audioSetting){
 
   let idx = 0;
   for (const e of (doc.entries || [])){
+
+    const nonEmpty = (Array.isArray(e.items) ? e.items : []).some(s => String(s||"").trim());
+    if (!String(e.title||"").trim() && !nonEmpty) {
+      console.log("[skip] empty entry");
+      continue;
+    }
+    
     idx++;
     const outMp4  = path.join(odir, `${String(idx).padStart(4,"0")}.mp4`);
     const outJson = path.join(odir, `${String(idx).padStart(4,"0")}.json`);
