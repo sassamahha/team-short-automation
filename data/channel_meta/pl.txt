@@ -1,0 +1,3 @@
+title_suffix = ｜Małe nawyki sukcesu ✊
+description = 📌 Codzienny „mały sukces” w 10 s. Zapisz i wypróbuj dziś.
+tags = małe zwycięstwa, nastawienie, rozwój osobisty
