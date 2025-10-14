@@ -1,0 +1,3 @@
+title_suffix = ｜Petites habitudes de réussite ✊
+description = 📌 “Petit succès” quotidien en 10 s. Enregistre et essaie aujourd’hui.
+tags = petites victoires, état d’esprit, développement personnel
