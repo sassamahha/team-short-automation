@@ -1,0 +1,3 @@
+title_suffix = ｜Piccole abitudini di successo ✊
+description = 📌 “Piccolo successo” quotidiano in 10 s. Salva e prova oggi.
+tags = piccole vittorie, mindset, crescita personale
