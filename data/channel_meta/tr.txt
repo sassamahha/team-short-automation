@@ -1,0 +1,3 @@
+title_suffix = ｜Küçük Başarı Alışkanlıkları ✊
+description = 📌 10 sn’de günlük “küçük başarı”. Kaydet ve bugün dene.
+tags = küçük zaferler, zihniyet, kişisel gelişim
