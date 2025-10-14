@@ -17,7 +17,7 @@ styles:
     title_size: 62
     item_size: 42
     cta_size: 48
-    line_gap: 96
+    line_gap: 72
     title_line_gap: 72
 
     # タイトルの下にさらに余白
@@ -41,30 +41,30 @@ styles:
     font: "assets/fonts/NotoSansJP-Regular.ttf"
     bullet: "・"
     item_size: 42
+    line_gap: 96
     title_wrap_chars_ja: 15
     item_wrap_chars_ja: 21
 
   es:
     font: "assets/fonts/NotoSans-Regular.ttf"
-    line_gap: 72
     item_wrap_chars_es: 42
 
   pt:
     font: "assets/fonts/NotoSans-Regular.ttf"
-    line_gap: 72
     item_wrap_chars_es: 42
 
   de:
     font: "assets/fonts/NotoSans-Regular.ttf"
-    line_gap: 72
-    item_wrap_chars_es: 42
+    item_wrap_chars_de: 42
 
   fr:
     font: "assets/fonts/NotoSans-Regular.ttf"
-    line_gap: 72
-    item_wrap_chars_es: 42
+    item_wrap_chars_fr: 42
 
   it:
     font: "assets/fonts/NotoSans-Regular.ttf"
-    line_gap: 72
-    item_wrap_chars_es: 42
+    item_wrap_chars_it: 42
+
+  id:
+    font: "assets/fonts/NotoSans-Regular.ttf"
+    item_wrap_chars_it: 42
