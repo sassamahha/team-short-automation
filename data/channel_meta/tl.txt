@@ -1,0 +1,3 @@
+title_suffix = ｜Maliit na gawi ng tagumpay ✊
+description = 📌 Araw-araw na “maliit na tagumpay” sa 10 s. I-save at subukan ngayon.
+tags = maliliit na panalo, mindset, tulong-sa-sarili
