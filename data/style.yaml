@@ -1,70 +1,83 @@
+# data/style.yaml
 styles:
-  default:
+  # ===== ベース（全言語の既定） =====
+  default: &base
     width: 1080
     height: 1920
 
-    # 画面外側マージン（上下/左右で分ける）
-    panel_margin_x: 0       # ←左右なし
-    panel_margin_y: 180      # ←上下180
-
-    # パネル内側パディング（上下/左右で分ける）
-    panel_padding_x: 72     # ←左合わせ
-    panel_padding_y: 128    # ←上下128
-
+    # 外側マージン / 内側パディング
+    panel_margin_x: 0
+    panel_margin_y: 180
+    panel_padding_x: 72
+    panel_padding_y: 128
     panel_alpha: 0.55
 
-    # テキストサイズや行間はそのまま（必要ならここで調整）
+    # タイポグラフィ
     title_size: 62
     item_size: 42
     cta_size: 48
     line_gap: 72
     title_line_gap: 72
-
-    # タイトルの下にさらに余白
     title_bottom_gap: 96
 
-    # 折返し（タイトル用 / 箇条書き用 で分離）
+    # 折返し（英語/CJKの既定）
     title_wrap_chars_en: 30
-    title_wrap_chars_ja: 15
     item_wrap_chars_en: 42
-    item_wrap_chars_ja: 16
+    title_wrap_chars_ja: 15
+    item_wrap_chars_ja: 21
 
-    bullet: "•"
+    bullet: "•"   # 言語別で必要なら上書き
+
+  # ===== ラテン系の共通（英/西/葡/独/仏/伊/印尼など） =====
+  latin_base: &latin
+    <<: *base
+    font: "assets/fonts/NotoSans-Regular.ttf"
+    line_gap: 72   # ラテンは詰まりやすいので72を既定に
+    # 言語別に長文化する場合は下で item_wrap を微調整
+
+  # ===== 言語ごとの最小上書き =====
 
   en:
-    font: "assets/fonts/NotoSans-Regular.ttf"
+    <<: *latin
     bullet: "•"
-    line_gap: 72
-    item_wrap_chars_en: 42
 
+  es:
+    <<: *latin
+    item_wrap_chars_es: 42
+
+  pt:
+    <<: *latin
+    item_wrap_chars_pt: 42
+
+  de:
+    <<: *latin
+    item_wrap_chars_de: 42
+
+  fr:
+    <<: *latin
+    item_wrap_chars_fr: 42
+
+  it:
+    <<: *latin
+    item_wrap_chars_it: 42
+
+  id:
+    <<: *latin
+    item_wrap_chars_id: 42
+
+  # 日本語（CJK）
   ja:
+    <<: *base
     font: "assets/fonts/NotoSansJP-Regular.ttf"
     bullet: "・"
-    item_size: 42
     line_gap: 96
     title_wrap_chars_ja: 15
     item_wrap_chars_ja: 21
 
-  es:
-    font: "assets/fonts/NotoSans-Regular.ttf"
-    item_wrap_chars_es: 42
-
-  pt:
-    font: "assets/fonts/NotoSans-Regular.ttf"
-    item_wrap_chars_es: 42
-
-  de:
-    font: "assets/fonts/NotoSans-Regular.ttf"
-    item_wrap_chars_de: 42
-
-  fr:
-    font: "assets/fonts/NotoSans-Regular.ttf"
-    item_wrap_chars_fr: 42
-
-  it:
-    font: "assets/fonts/NotoSans-Regular.ttf"
-    item_wrap_chars_it: 42
-
-  id:
-    font: "assets/fonts/NotoSans-Regular.ttf"
-    item_wrap_chars_it: 42
+  # ヒンディー（Devanagari）
+  hi:
+    <<: *latin
+    font: "assets/fonts/NotoSansDevanagari-Regular.ttf"
+    title_wrap_chars_hi: 28
+    item_wrap_chars_hi: 40
+    line_gap: 84
