@@ -1,0 +1,3 @@
+title_suffix = ｜Thói quen thành công nhỏ ✊
+description = 📌 “Chiến thắng nhỏ” 10 giây mỗi ngày. Lưu lại và thử hôm nay.
+tags = chiến thắng nhỏ, tư duy, phát triển bản thân
