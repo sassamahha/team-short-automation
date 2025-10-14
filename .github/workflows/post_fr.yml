@@ -1,4 +1,4 @@
-name: Post PT
+name: Post FR
 
 on:
   workflow_dispatch: {}
