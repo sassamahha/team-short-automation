@@ -81,3 +81,12 @@ styles:
     title_wrap_chars_hi: 28
     item_wrap_chars_hi: 40
     line_gap: 84
+
+  # ベトナム
+  vi:
+    <<: *latin
+    font: "assets/fonts/NotoSans-Regular.ttf"
+    line_gap: 84
+    title_wrap_chars_vi: 30
+    item_wrap_chars_vi: 42
+    bullet: "•"
