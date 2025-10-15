@@ -38,3 +38,69 @@ rules:
   bn:
     validate: true
     any_scripts: ["Bengali"]
+
+  en:
+    validate: true
+    any_scripts: ["Latin"]
+
+  es:
+    validate: true
+    any_scripts: ["Latin"]
+
+  pt:
+    validate: true
+    any_scripts: ["Latin"]
+
+  de:
+    validate: true
+    any_scripts: ["Latin"]
+
+  fr:
+    validate: true
+    any_scripts: ["Latin"]
+
+  it:
+    validate: true
+    any_scripts: ["Latin"]
+
+  id:
+    validate: true
+    any_scripts: ["Latin"]
+
+  vi:
+    validate: true
+    any_scripts: ["Latin"]
+
+  tr:
+    validate: true
+    any_scripts: ["Latin"]
+
+  pl:
+    validate: true
+    any_scripts: ["Latin"]
+
+  tl:
+    validate: true
+    any_scripts: ["Latin"]
+
+  sw:
+    validate: true
+    any_scripts: ["Latin"]
+
+  # ===== アラビア系派生 =====
+  fa:
+    validate: true
+    any_scripts: ["Arabic"]
+
+  ur:
+    validate: true
+    any_scripts: ["Arabic"]
+
+  # ===== 中国語のバリアント（繁/簡）=====
+  zh-Hans:
+    validate: true
+    any_scripts: ["Han"]
+
+  zh-Hant:
+    validate: true
+    any_scripts: ["Han"]
