@@ -3,15 +3,14 @@ name: Post FR
 on:
   workflow_dispatch: {}
   schedule:
-    - cron: "17 0 * * *"   # 00:14 UTC
-    - cron: "17 5 * * *"   # 05:14 UTC
-    - cron: "17 10 * * *"  # 10:14 UTC
-    - cron: "17 15 * * *"  # 15:14 UTC
-    - cron: "17 20 * * *"  # 20:14 UTC
-
+    - cron: "17 0 * * *"   # 00:17 UTC
+    - cron: "17 5 * * *"   # 05:17 UTC
+    - cron: "17 10 * * *"  # 10:17 UTC
+    - cron: "17 15 * * *"  # 15:17 UTC
+    - cron: "17 20 * * *"  # 20:17 UTC
 
 concurrency:
-  group: post-fr  # 言語変更(1/3)
+  group: post-fr
   cancel-in-progress: false
 
 jobs:
@@ -19,23 +18,52 @@ jobs:
     runs-on: ubuntu-latest
     permissions: { contents: write }
     env:
-      LANG: fr  # 言語変更(2/3)
+      LANG: fr
       MAX_UPLOADS: "1"
+
     steps:
       - uses: actions/checkout@v4
+        with:
+          lfs: true  # ← LFS使ってる場合は必須
+
       - uses: actions/setup-node@v4
-        with: { node-version: 20 }
-      - run: npm install --no-audit --no-fund
+        with:
+          node-version: 20
+
+      - run: npm ci --no-audit --no-fund
+
+      # シークレットが反映されているか長さだけ確認（値はマスクされる）
+      - name: Debug tokens (length only)
+        env:
+          YT_CLIENT_ID:     ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN_FR }}
+        run: |
+          echo "CID_LEN=${#YT_CLIENT_ID}"
+          echo "CSEC_LEN=${#YT_CLIENT_SECRET}"
+          echo "RT_LEN=${#YT_REFRESH_TOKEN}"
+
       - name: Upload to YouTube
         env:
           YT_CLIENT_ID:     ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
-          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN_FR }}  # 言語変更(3/3)
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN_FR }}
         run: node scripts/youtube_upload.js --lang="$LANG" --max="$MAX_UPLOADS"
+
+      # 何がどこに動いたか可視化
+      - name: Debug list
+        if: always()
+        run: |
+          echo "::group::videos/$LANG"
+          ls -Rlh videos/$LANG || true
+          echo "::endgroup::"
+
+      # sent/failed/queue すべてをコミット対象に
       - name: Commit moves
+        if: always()
         run: |
           git config user.name  "github-actions"
           git config user.email "actions@users.noreply.github.com"
-          git add videos/$LANG/sent/* videos/$LANG/queue/* 2>/dev/null || true
-          git commit -m "post(${LANG}): move to sent" || echo "nothing to commit"
+          git add -A videos/$LANG
+          git commit -m "post(${LANG}): move sent/failed/queue" || echo "nothing to commit"
           git push || true
