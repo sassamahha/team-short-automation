@@ -34,7 +34,7 @@ function langDisplayName(code){
     // Latin
     en:"English",
     es:"Spanish",
-    pt:"Portuguese(Brazil) ",
+    pt:"Portuguese(Brazil)",
     fr:"French",
     it:"Italian",
     de:"German",
