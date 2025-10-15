@@ -1,4 +1,4 @@
-name: Post VI
+name: Post TR
 
 on:
   workflow_dispatch: {}
