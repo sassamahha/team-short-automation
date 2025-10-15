@@ -30,7 +30,7 @@ jobs:
         with:
           node-version: 20
 
-      - run: npm ci --no-audit --no-fund
+      - run: npm install --no-audit --no-fund
 
       # シークレットが反映されているか長さだけ確認（値はマスクされる）
       - name: Debug tokens (length only)
