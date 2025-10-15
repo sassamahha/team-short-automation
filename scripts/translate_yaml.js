@@ -30,10 +30,43 @@ const guardPath = ()=> path.join("data","lang_rules.yaml");
 
 // -------- helpers
 function langDisplayName(code){
-  // 簡易マップ（無ければコードをそのまま渡す）
-  const map = { ja:"Japanese", es:"Spanish", fr:"French", de:"German", it:"Italian", pt:"Portuguese (Brazil)",
-                id:"Indonesian", hi:"Hindi", ko:"Korean", zh:"Chinese", ru:"Russian", ar:"Arabic", he:"Hebrew",
-                th:"Thai", vi:"Vietnamese" };
+  const map = {
+    // Latin
+    en:"English",
+    es:"Spanish",
+    pt:"Portuguese",
+    fr:"French",
+    it:"Italian",
+    de:"German",
+    tr:"Turkish",
+    pl:"Polish",
+    vi:"Vietnamese",
+    tl:"Filipino",       // Tagalog/Filipino
+    sw:"Swahili",
+    fa:"Persian (Farsi)",
+
+    // CJK / Hangul
+    ja:"Japanese",
+    ko:"Korean",
+    zhhans:"Chinese (Simplified)",   // 簡体
+    zhhant:"Chinese (Traditional)",  // 繁体
+
+    // SE Asia
+    id:"Indonesian",
+    th:"Thai",
+
+    // Cyrillic
+    ru:"Russian",
+    uk:"Ukrainian",
+
+    // South Asia
+    hi:"Hindi",
+    bn:"Bengali",
+    ur:"Urdu",
+
+    // MENA
+    ar:"Arabic",
+  };
   return map[code] || code;
 }
 
