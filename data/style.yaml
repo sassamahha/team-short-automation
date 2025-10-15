@@ -78,9 +78,9 @@ styles:
   hi:
     <<: *latin
     font: "assets/fonts/NotoSansDevanagari-Regular.ttf"
-    title_wrap_chars_hi: 28
-    item_wrap_chars_hi: 40
-    line_gap: 84
+    title_wrap_chars_hi: 36
+    item_wrap_chars_hi: 50
+    line_gap: 75
 
   # ベトナム
   vi:
