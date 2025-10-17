@@ -1,0 +1,3 @@
+title_suffix = | StudyRiver
+description = ເກັບໄວ້ ແລະລອງເຮັດວັນນີ້ — “ຄວາມສຳເລັດນ້ອຍ” 10 ວິນາທີ.
+tags = ນິໄສ, ແຮງຈູງໃຈ, ປະສິດທິພາບ, #Shorts
