@@ -1,0 +1,3 @@
+title_suffix = | StudyRiver
+description = Mentsd el, és próbálj ki ma egy dolgot — 10 másodperces „kis siker”.
+tags = szokások, motiváció, produktivitás, önfejlesztés, #Shorts
