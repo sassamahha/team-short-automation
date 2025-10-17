@@ -2,12 +2,12 @@ name: Post ES
 
 on:
   workflow_dispatch: {}
-  schedule:
-    - cron: "8 0 * * *"   # 00:08 UTC
-    - cron: "8 5 * * *"   # 05:08 UTC
-    - cron: "8 10 * * *"  # 10:08 UTC
-    - cron: "8 15 * * *"  # 15:08 UTC
-    - cron: "8 20 * * *"  # 20:08 UTC
+  # schedule:
+    # - cron: "8 0 * * *"   # 00:08 UTC
+    # - cron: "8 5 * * *"   # 05:08 UTC
+    # - cron: "8 10 * * *"  # 10:08 UTC
+    # - cron: "8 15 * * *"  # 15:08 UTC
+    # - cron: "8 20 * * *"  # 20:08 UTC
 
 
 
