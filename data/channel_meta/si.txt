@@ -1,0 +1,3 @@
+title_suffix = | StudyRiver
+description = අදක් එකක් අත්හදා බලන්න — තත්පර 10ක “කුඩා ජය”.
+tags = චරිත, ප්‍රේරණය, නිෂ්පාදනශීලී, #Shorts
