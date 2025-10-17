@@ -1,0 +1,3 @@
+title_suffix = | StudyRiver
+description = Ulož si a dnes zkus jednu věc — 10sekundový „malý úspěch“.
+tags = návyky, motivace, produktivita, seberozvoj, #Shorts
