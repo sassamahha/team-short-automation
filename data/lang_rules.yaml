@@ -1,8 +1,10 @@
 rules:
+  # 既定：バリデーションOFF（個別言語で上書き）
   default:
     validate: false
-    min_items_ratio: 0.6   # 箇条書きのうち何割がそのスクリプトを含むか
+    min_items_ratio: 0.6   # 箇条書きのうち、この割合以上が該当スクリプトに合致
 
+  # ===== CJK / Hangul =====
   ja:
     validate: true
     any_scripts: ["Han", "Hiragana", "Katakana"]
@@ -11,96 +13,118 @@ rules:
     validate: true
     any_scripts: ["Hangul"]
 
-  zh:
+  # 中国語（簡体/繁体）— Han
+  zh-Hans:
+    validate: true
+    any_scripts: ["Han"]
+  zh-Hant:
     validate: true
     any_scripts: ["Han"]
 
-  ru:
+  # 互換キー（表記ゆれ吸収）
+  zh:
     validate: true
-    any_scripts: ["Cyrillic"]
+    any_scripts: ["Han"]
+  zhhans:
+    validate: true
+    any_scripts: ["Han"]
+  zhhant:
+    validate: true
+    any_scripts: ["Han"]
+  zh_hans:
+    validate: true
+    any_scripts: ["Han"]
+  zh_hant:
+    validate: true
+    any_scripts: ["Han"]
 
+  # ===== アラビア系（RTL） =====
   ar:
     validate: true
     any_scripts: ["Arabic"]
-
-  he:
-    validate: true
-    any_scripts: ["Hebrew"]
-
-  th:
-    validate: true
-    any_scripts: ["Thai"]
-
-  hi:
-    validate: true
-    any_scripts: ["Devanagari"]
-
-  bn:
-    validate: true
-    any_scripts: ["Bengali"]
-
-  en:
-    validate: true
-    any_scripts: ["Latin"]
-
-  es:
-    validate: true
-    any_scripts: ["Latin"]
-
-  pt:
-    validate: true
-    any_scripts: ["Latin"]
-
-  de:
-    validate: true
-    any_scripts: ["Latin"]
-
-  fr:
-    validate: true
-    any_scripts: ["Latin"]
-
-  it:
-    validate: true
-    any_scripts: ["Latin"]
-
-  id:
-    validate: true
-    any_scripts: ["Latin"]
-
-  vi:
-    validate: true
-    any_scripts: ["Latin"]
-
-  tr:
-    validate: true
-    any_scripts: ["Latin"]
-
-  pl:
-    validate: true
-    any_scripts: ["Latin"]
-
-  tl:
-    validate: true
-    any_scripts: ["Latin"]
-
-  sw:
-    validate: true
-    any_scripts: ["Latin"]
-
-  # ===== アラビア系派生 =====
-  fa:
+  fa:   # Persian (Farsi)
     validate: true
     any_scripts: ["Arabic"]
-
   ur:
     validate: true
     any_scripts: ["Arabic"]
 
-  # ===== 中国語のバリアント（繁/簡）=====
-  zh-Hans:
+  # ===== インド系 =====
+  hi:   # Hindi
     validate: true
-    any_scripts: ["Han"]
+    any_scripts: ["Devanagari"]
+  ne:   # Nepali
+    validate: true
+    any_scripts: ["Devanagari"]
+  bn:   # Bengali
+    validate: true
+    any_scripts: ["Bengali"]
 
-  zh-Hant:
+  # ===== 東南アジア固有 =====
+  th:   # Thai
     validate: true
-    any_scripts: ["Han"]
+    any_scripts: ["Thai"]
+  km:   # Khmer (Cambodia)
+    validate: true
+    any_scripts: ["Khmer"]
+  si:   # Sinhala (Sri Lanka)
+    validate: true
+    any_scripts: ["Sinhala"]
+  lo:   # Lao
+    validate: true
+    any_scripts: ["Lao"]
+
+  # ===== キリル系 =====
+  uk:   # Ukrainian
+    validate: true
+    any_scripts: ["Cyrillic"]
+  ru:   # Russian（今は投稿NGでも一応定義は残す）
+    validate: true
+    any_scripts: ["Cyrillic"]
+
+  # ===== ラテン系（まとめ） =====
+  en:
+    validate: true
+    any_scripts: ["Latin"]
+  es:
+    validate: true
+    any_scripts: ["Latin"]
+  pt:
+    validate: true
+    any_scripts: ["Latin"]
+  de:
+    validate: true
+    any_scripts: ["Latin"]
+  fr:
+    validate: true
+    any_scripts: ["Latin"]
+  it:
+    validate: true
+    any_scripts: ["Latin"]
+  id:
+    validate: true
+    any_scripts: ["Latin"]
+  vi:
+    validate: true
+    any_scripts: ["Latin"]
+  tr:
+    validate: true
+    any_scripts: ["Latin"]
+  pl:
+    validate: true
+    any_scripts: ["Latin"]
+  tl:   # Tagalog / Filipino
+    validate: true
+    any_scripts: ["Latin"]
+  sw:   # Swahili
+    validate: true
+    any_scripts: ["Latin"]
+  ms:   # Malay
+    validate: true
+    any_scripts: ["Latin"]
+  cs:   # Czech
+    validate: true
+    any_scripts: ["Latin"]
+  hu:   # Hungarian
+    validate: true
+    any_scripts: ["Latin"]
