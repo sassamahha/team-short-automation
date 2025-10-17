@@ -1,0 +1,41 @@
+name: Post TH
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "40 0 * * *"   # 00:40 UTC
+    - cron: "40 5 * * *"   # 05:40 UTC
+    - cron: "40 10 * * *"  # 10:40 UTC
+    - cron: "40 15 * * *"  # 15:40 UTC
+    - cron: "40 20 * * *"  # 20:40 UTC
+
+
+concurrency:
+  group: post-zh_hant  # 言語変更(1/3)
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions: { contents: write }
+    env:
+      LANG: zh_hant  # 言語変更(2/3)
+      MAX_UPLOADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm install --no-audit --no-fund
+      - name: Upload to YouTube
+        env:
+          YT_CLIENT_ID:     ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN_ZH_HANT }}  # 言語変更(3/3)
+        run: node scripts/youtube_upload.js --lang="$LANG" --max="$MAX_UPLOADS"
+      - name: Commit moves
+        run: |
+          git config user.name  "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          git add videos/$LANG/sent/* videos/$LANG/queue/* 2>/dev/null || true
+          git commit -m "post(${LANG}): move to sent" || echo "nothing to commit"
+          git push || true
