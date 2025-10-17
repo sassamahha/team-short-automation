@@ -31,41 +31,13 @@ const guardPath = ()=> path.join("data","lang_rules.yaml");
 // -------- helpers
 function langDisplayName(code){
   const map = {
-    // Latin
-    en:"English",
-    es:"Spanish",
-    pt:"Portuguese(Brazil)",
-    fr:"French",
-    it:"Italian",
-    de:"German",
-    tr:"Turkish",
-    pl:"Polish",
-    vi:"Vietnamese",
-    tl:"Filipino",       // Tagalog/Filipino
-    sw:"Swahili",
-    fa:"Persian (Farsi)",
-
-    // CJK / Hangul
-    ja:"Japanese",
-    ko:"Korean",
-    zhhans:"Chinese (Simplified)",   // 簡体
-    zhhant:"Chinese (Traditional)",  // 繁体
-
-    // SE Asia
-    id:"Indonesian",
-    th:"Thai",
-
-    // Cyrillic
-    ru:"Russian",
-    uk:"Ukrainian",
-
-    // South Asia
-    hi:"Hindi",
-    bn:"Bengali",
-    ur:"Urdu",
-
-    // MENA
-    ar:"Arabic",
+    en:"English", es:"Spanish", pt:"Portuguese (Brazil)", fr:"French", it:"Italian", de:"German",
+    tr:"Turkish", pl:"Polish", vi:"Vietnamese", tl:"Filipino", sw:"Swahili", fa:"Persian (Farsi)",
+    ja:"Japanese", ko:"Korean",
+    "zh-Hant":"Chinese (Traditional)", zhhant:"Chinese (Traditional)", zh_hant:"Chinese (Traditional)",
+    id:"Indonesian", th:"Thai", uk:"Ukrainian",
+    hi:"Hindi", bn:"Bengali", ur:"Urdu", ne:"Nepali",
+    ar:"Arabic", ms:"Malay", km:"Khmer (Cambodia)", si:"Sinhala (Sri Lanka)", lo:"Lao",
   };
   return map[code] || code;
 }
