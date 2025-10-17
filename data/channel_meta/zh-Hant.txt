@@ -1,0 +1,3 @@
+title_suffix =｜StudyRiver
+description = 先收藏，今天就試一個。10 秒的「小小成功」。
+tags = 習慣, 動力, 生產力, 自我成長, #Shorts
