@@ -26,17 +26,15 @@ styles:
     title_wrap_chars_ja: 15
     item_wrap_chars_ja: 21
 
-    bullet: "•"   # 言語別で必要なら上書き
+    bullet: "•"
 
   # ===== ラテン系の共通（英/西/葡/独/仏/伊/印尼など） =====
   latin_base: &latin
     <<: *base
     font: "assets/fonts/NotoSans-Regular.ttf"
-    line_gap: 72   # ラテンは詰まりやすいので72を既定に
-    # 言語別に長文化する場合は下で item_wrap を微調整
+    line_gap: 72
 
   # ===== 言語ごとの最小上書き =====
-
   en:
     <<: *latin
     bullet: "•"
@@ -60,6 +58,10 @@ styles:
   it:
     <<: *latin
     item_wrap_chars_it: 42
+
+  tr:
+    <<: *latin
+    item_wrap_chars_tr: 42
 
   id:
     <<: *latin
@@ -85,8 +87,135 @@ styles:
   # ベトナム
   vi:
     <<: *latin
-    font: "assets/fonts/NotoSans-Regular.ttf"
-    line_gap: 84
+    line_gap: 72
     title_wrap_chars_vi: 30
     item_wrap_chars_vi: 42
-    bullet: "•"
+
+  # タイ
+  th:
+    <<: *latin
+    font: "assets/fonts/NotoSansThai-Regular.ttf"
+    line_gap: 90
+    title_wrap_chars_th: 24
+    item_wrap_chars_th: 34
+
+  # 韓国語（Hangul）
+  ko:
+    <<: *base
+    font: "assets/fonts/NotoSansKR-Regular.ttf"
+    line_gap: 90
+    title_wrap_chars_ko: 18
+    item_wrap_chars_ko: 28
+
+  # 繁体字（台湾/香港）
+  zh-Hant:
+    <<: *base
+    font: "assets/fonts/NotoSansTC-Regular.ttf"   # なければ NotoSansCJKtc-Regular.ttf
+    line_gap: 90
+    title_wrap_chars_zh_hant: 16
+    item_wrap_chars_zh_hant: 24
+
+  # アラビア語（RTL）
+  ar:
+    <<: *latin
+    font: "assets/fonts/NotoNaskhArabic-Regular.ttf"
+    rtl: true
+    text_align: "right"
+    line_gap: 84
+    title_wrap_chars_ar: 30
+    item_wrap_chars_ar: 44
+
+  # ペルシャ（Farsi, RTL）
+  fa:
+    <<: *latin
+    font: "assets/fonts/NotoNaskhArabic-Regular.ttf"  # 可能なら NotoNastaliqUrdu でもOK
+    rtl: true
+    text_align: "right"
+    line_gap: 90
+    title_wrap_chars_fa: 30
+    item_wrap_chars_fa: 44
+
+  # ウルドゥー（RTL）
+  ur:
+    <<: *latin
+    font: "assets/fonts/NotoNaskhArabic-Regular.ttf"  # 環境によっては NotoNastaliqUrdu
+    rtl: true
+    text_align: "right"
+    line_gap: 96
+    title_wrap_chars_ur: 28
+    item_wrap_chars_ur: 42
+
+  # ベンガル語
+  bn:
+    <<: *latin
+    font: "assets/fonts/NotoSansBengali-Regular.ttf"
+    line_gap: 92
+    title_wrap_chars_bn: 30
+    item_wrap_chars_bn: 44
+
+  # タガログ（Filipino）
+  tl:
+    <<: *latin
+    item_wrap_chars_tl: 42
+
+  # スワヒリ
+  sw:
+    <<: *latin
+    item_wrap_chars_sw: 42
+
+  # ウクライナ語（キリル）
+  uk:
+    <<: *latin
+    item_wrap_chars_uk: 42
+
+  # ポーランド語
+  pl:
+    <<: *latin
+    item_wrap_chars_pl: 42
+
+  # チェコ語
+  cs:
+    <<: *latin
+    item_wrap_chars_cs: 42
+
+  # ハンガリー語
+  hu:
+    <<: *latin
+    item_wrap_chars_hu: 42
+
+  # ネパール語（Devanagari）
+  ne:
+    <<: *latin
+    font: "assets/fonts/NotoSansDevanagari-Regular.ttf"
+    line_gap: 78
+    title_wrap_chars_ne: 34
+    item_wrap_chars_ne: 48
+
+  # マレー語（ラテン）
+  ms:
+    <<: *latin
+    item_wrap_chars_ms: 42
+
+  # クメール語（カンボジア）
+  km:
+    <<: *latin
+    font: "assets/fonts/NotoSansKhmer-Regular.ttf"
+    line_gap: 92
+    title_wrap_chars_km: 28
+    item_wrap_chars_km: 40
+
+  # シンハラ語（スリランカ）
+  si:
+    <<: *latin
+    font: "assets/fonts/NotoSansSinhala-Regular.ttf"
+    line_gap: 94
+    title_wrap_chars_si: 28
+    item_wrap_chars_si: 40
+
+  # ラオス語
+  lo:
+    <<: *latin
+    font: "assets/fonts/NotoSansLao-Regular.ttf"
+    line_gap: 92
+    title_wrap_chars_lo: 28
+    item_wrap_chars_lo: 40
