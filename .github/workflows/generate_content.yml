@@ -21,12 +21,21 @@ jobs:
     env:
       COUNT: ${{ github.event.inputs.count || '5' }}
       DURATION: "10"
-      BG: assets/bg
-      AUDIO: assets/bgm
-      LANGS_TO_RENDER: "en,ja,de" # ＜言語毎に追加(1/2)
+      BG: assets/bg        # ディレクトリ指定 → ランダム
+      AUDIO: assets/bgm    # ディレクトリ指定 → ランダム
+      LANGS_TO_RENDER: "en,ja,es"   # ← es に変更
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout (with LFS)
+        uses: actions/checkout@v4
+        with:
+          lfs: true   # ← これ超重要。LFS実体を取る
+
+      - name: Git LFS pull (safety)
+        run: |
+          git lfs version || sudo apt-get update && sudo apt-get install -y git-lfs
+          git lfs install
+          git lfs pull
 
       - name: Set DATE (today)
         run: echo "DATE=$(date +%F)" >> $GITHUB_ENV
@@ -34,9 +43,12 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: "20" }
 
-      - name: Install deps
+      - name: Install deps (ffmpeg + fonts)
         run: |
-          sudo apt-get update && sudo apt-get install -y ffmpeg
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg \
+            fonts-noto fonts-noto-cjk fonts-noto-color-emoji \
+            fonts-dejavu-core
           npm ci || npm install --no-audit --no-fund
 
       - name: Verify OPENAI key
@@ -56,7 +68,7 @@ jobs:
       - name: EN -> world translate
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: node scripts/translate_yaml.js --date=${DATE} --langs=ja,de # ＜言語毎に追加(2/2)
+        run: node scripts/translate_yaml.js --date=${DATE} --langs=ja,es  # ← es に変更
 
       # ③レンダリング（今日の日付で出力）
       - name: Render videos (world)
@@ -69,6 +81,12 @@ jobs:
               echo "skip $L (data/$L/${DATE}.yaml not found)"
             fi
           done
+
+      # デバッグ: 実際に使うフォントとBG/BGMを一行で可視化（任意）
+      - name: Debug fonts/files
+        run: |
+          ls -la assets/fonts || true
+          fc-list | head || true
 
       # 在庫コミット（使用済みシードの状態も残す）
       - name: Commit stock
