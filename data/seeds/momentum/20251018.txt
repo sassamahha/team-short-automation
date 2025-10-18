@@ -1,100 +1,100 @@
-WIP制限で詰まりを消す7つの実装法
-カンバン可視化で流れを作る7つの工夫
-“Quick Win”列で勢いを出す7つの選び方
-ポモドーロ×チーム運用の7ルール
-タイムボクシングで予定倒れを防ぐ7ステップ
-スプリントゴールを忘れない7つの見える化
-デイリースタンドアップを15分で終える7質問
-30-60-90日プランを効かせる7つの鍵
-バーンアップ/ダウンで先行きを読む7指標
-ロードブロックを即解消する7つの手当て
-“Feedback Friday”で改善を回す7手順
-自動化で手戻りを減らす7つの仕掛け
-OKRを社内公開する7つの運用ポイント
-バッジで行動を促すゲーミフィケーション7策
-スプリント健康診断で異常検知する7メトリクス
-キックオフ“エナジャイザー”7アイデア
-午前は最重要1タスクだけにする7ルール
-朝活ペアコーディングを機能させる7つの工夫
-“5分同期”で意思決定を早める7つの使い方
-社内デモデーで加速する7つの設計
-バックログを一気に軽くする7つの整理術
-失敗共有を小さく早く回す7つの型
-進捗ダッシュボードで動機づける7表示
-オートマージで渋滞を解消する7設定
-休息を戦略的に挿入する7つのリズム
-“Two-Pizza Team”を維持する7基準
-時間見積りを外さない7つのアンカー
-依存関係を前倒しで潰す7チェック
-リリース頻度を上げる7つの土台
-“DoD/DoR”を揃える7ルール
-スプリント目標の脱肥大化7テク
-途中差し込みリクエストを捌く7手
-タスク粒度を揃える7つの基準
-コンテキストスイッチを減らす7策
-朝一“障害物レビュー”の7手順
-ベロシティ安定化の7つの打ち手
-バッチ処理を小分けにする7つの設計
-マルチタスクの損失を減らす7つの約束
-“今日はここまで”を決める7つの締め方
-スタート損失を減らす7つの起動儀式
-“No-Meeting 午前”を守る7ルール
-火消しタスクの常態化を防ぐ7対策
-リリース恐怖を克服する7つの練習
-フィーチャーフラグ運用の7ポイント
-“小さく出して学ぶ”7つの検証法
-バグ修正の先送りを断つ7ルール
-レビュー待ちの滞留を減らす7工夫
-ハンドオフ時間を短縮する7つの型
-非機能タスクを埋もれさせない7手順
-期限前倒し文化を作る7つの仕掛け
-週初に勢いを作る7つの起点
-週中失速を防ぐ7つのテコ入れ
-週末に積み残さない7つの整理
-“Today’s One Metric”の7つの選び方
-スプリントレビューをショー化する7演出
-ストーリーポイント運用の7つの注意
-リードタイム短縮の7つの打ち手
-サイクルタイム改善の7つの実験
-キューを細らせる7つのWIP設計
-キャンセル・縮小をためらわない7基準
-仕様確定前でも進める7つの前倒し
-“動くもの優先”の7チェック
-途中成果を可視化する7つの見せ方
-“あと一歩”を押す7つのナッジ
-集中タイムの侵食を防ぐ7ガード
-雑音を減らす通知設定7選
-モブ/ペアの切り替え7ルール
-タスク選択の迷いを消す7基準
-“未着手0”を維持する7つの運用
-デプロイ窓口を広げる7つの手当て
-“小さな勝利ログ”の7つの書き方
-思い切り捨てる7つの判断軸
-目標と現実のズレを詰める7会話
-“締切前倒し宣言”の7効果
-期限超過の再発を防ぐ7つのふりかえり
-オーバースコープを削る7質問
-手戻りを設計で減らす7つの型
-テスト自動化で速度を上げる7段階
-リファクタリングを日課にする7つの枠組み
-バックアウト計画を常備する7チェック
-リリース当日の混乱を防ぐ7準備
-依頼待ちを可視化する7つのボード術
-外部レビューを味方にする7つの段取り
-MTTR短縮の7手（検知→通報→修復）
-“いまやる”を引き出す7スイッチ
-期限に強い見積もり7パターン
-週間キャパを守る7つの制約設計
-目標の再定義をためらわない7基準
-技術的負債を雪だるまにしない7ルール
-“やり切り日”を設ける7つの運用
-迷い時間を減らす7つのプリセット
-進捗詐欺をなくす7つの可視化
-クリティカルパスを守る7つの見張り
-“止まったカード0”を目指す7手
-プロトタイプ最短化の7テク
-ユーザーフィードバック即反映7フロー
-タスク着手から1日で見せる7つの工夫
-実験を増やす7つの安全柵
-失敗から勢いを取り戻す7手順
-次スプリントの助走を作る7つの準備
+7 Implementations to Remove Bottlenecks with WIP Limits
+7 Tweaks to Create Flow with Kanban Visualization
+7 Ways to Pick a “Quick Win” Lane that Builds Momentum
+7 Rules for Team Pomodoro
+7 Steps to Prevent Plan-Fail with Timeboxing
+7 Visuals that Keep the Sprint Goal Unmissable
+7 Questions to Finish Standups in 15 Minutes
+7 Keys to Make 30-60-90 Plans Work
+7 Metrics to Read the Road Ahead with Burn Up/Down
+7 Remedies to Clear Roadblocks Fast
+7 Steps to Run “Feedback Friday”
+7 Automations that Cut Rework
+7 Ops Tips for Making OKRs Internal-Public
+7 Gamification Plays with Badges that Drive Action
+7 Sprint Health Metrics for Early Anomaly Detection
+7 Kickoff “Energizer” Ideas
+7 Rules for “One Most Important Task” Mornings
+7 Tweaks to Make Morning Pair Coding Work
+7 Uses of a “5-Minute Sync” to Speed Decisions
+7 Designs to Accelerate with Internal Demo Days
+7 Cleanup Moves to Lighten the Backlog Fast
+7 Patterns for Small, Fast Failure Sharing
+7 Dashboard Displays that Motivate Progress
+7 Auto-Merge Settings that Remove Review Traffic
+7 Rhythms to Insert Rest Strategically
+7 Criteria to Keep Teams “Two-Pizza” Sized
+7 Anchors for Reliable Time Estimates
+7 Checks to Retire Dependencies Early
+7 Foundations to Raise Release Frequency
+7 Rules to Align DoD/DoR
+7 Techniques to De-inflate Sprint Goals
+7 Ways to Handle Mid-Sprint Interrupts
+7 Criteria to Normalize Task Granularity
+7 Tactics to Reduce Context Switching
+7 Steps for a First-Thing “Obstacle Review”
+7 Plays to Stabilize Velocity
+7 Designs to Micro-Batch Work
+7 Commitments to Reduce Multitasking Losses
+7 Closers to Decide “Done for Today”
+7 Startup Rituals that Cut Start-Loss
+7 Rules to Protect “No-Meeting Mornings”
+7 Countermeasures to Avoid Perma-Firefighting
+7 Drills to Beat Release Fear
+7 Points for Healthy Feature Flag Ops
+7 Validation Methods for “Ship Small, Learn Fast”
+7 Rules to Stop Deferring Bug Fixes
+7 Tweaks to Cut Review Queue Stalls
+7 Patterns to Shorten Handoff Time
+7 Steps to Keep Non-Functional Work Visible
+7 Mechanisms that Build an “Early Deadline” Culture
+7 Monday Starters that Create Momentum
+7 Mid-Week Boosts to Prevent Stall
+7 Friday Tidies that Leave Nothing Hanging
+7 Ways to Choose “Today’s One Metric”
+7 Stagings to Turn Sprint Reviews into Shows
+7 Cautions for Story Point Practice
+7 Plays to Shorten Lead Time
+7 Experiments to Improve Cycle Time
+7 WIP Designs to Thin the Queue
+7 Criteria for Canceling or Slimming Without Hesitation
+7 Ways to Advance Before Specs Are Final
+7 Checks for “Working Stuff First”
+7 Ways to Visualize Work-in-Progress
+7 Nudges that Push the “One More Step”
+7 Guards to Protect Focus Time
+7 Notification Settings to Reduce Noise
+7 Rules to Switch Between Mob and Pairing
+7 Criteria to Remove Task-Picking Hesitation
+7 Practices to Keep “Zero Unstarted”
+7 Provisions to Widen the Deploy Gate
+7 Ways to Log “Small Wins”
+7 Axes for Deciding What to Ruthlessly Drop
+7 Conversations to Close the Goal-Reality Gap
+7 Effects of a “Deadline Pull-Forward” Pledge
+7 Retros to Prevent Repeat Overruns
+7 Questions to Cut Over-Scope
+7 Design Patterns that Reduce Rework
+7 Stages to Speed Up with Test Automation
+7 Frameworks to Make Refactoring a Daily Habit
+7 Checks to Keep a Backout Plan Ready
+7 Preparations to Avoid Release-Day Chaos
+7 Board Practices to Visualize “Waiting on Others”
+7 Arrangements to Make External Review an Ally
+7 MTTR Cut Moves (Detect → Notify → Repair)
+7 Switches that Trigger “Do It Now”
+7 Estimation Patterns that Protect Deadlines
+7 Constraint Designs to Protect Weekly Capacity
+7 Criteria to Not Hesitate Re-defining Goals
+7 Rules to Keep Tech Debt from Snowballing
+7 Practices for a Dedicated “Finish Day”
+7 Presets that Reduce Indecision Time
+7 Visuals that Eliminate “Progress Theater”
+7 Watchpoints to Protect the Critical Path
+7 Moves Toward “Zero Stalled Cards”
+7 Techniques to Shorten Prototypes
+7 Flows to Reflect User Feedback Fast
+7 Ways to Show Work Within a Day of Start
+7 Safety Rails to Multiply Experiments
+7 Steps to Reclaim Momentum After Failure
+7 Preparations to Build Run-Up for the Next Sprint
