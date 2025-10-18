@@ -7,7 +7,7 @@ on:
     inputs:
       count:
         description: "How many entries to generate"
-        default: "5"
+        default: "3"
 
 concurrency:
   group: gen-stock
