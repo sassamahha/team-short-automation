@@ -230,6 +230,7 @@ function pickBgPath(bgSetting){
   // ----- font
   const fontPath = fontFor(LANG, S.font);
   if (!fontPath) throw new Error("No usable font found. Put NotoSans in assets/fonts or install Noto/DejaVu.");
+  console.log(`[font:${LANG}] ${fontPath}`); // デバッグ表示
   const isCJK = LANG === "ja" || LANG === "zh" || LANG === "ko";
 
   // wrap limits（per lang override → EN/JA の既定）
@@ -295,8 +296,8 @@ function pickBgPath(bgSetting){
       const tf = await makeTxt(`title_${idx}_${k}`, titleLines[k]);
       const y  = `${iyTitle}+${k}*(${tSize}+${titleLineSpace})`;
       parts.push(
-        `[v${vi}]drawtext=fontfile=${fontPath}:textfile=${tf}:x=${ix}:y=${y}:fontsize=${tSize}:fontcolor=white:` +
-        `shadowcolor=black@0.6:shadowx=2:shadowy=2:text_shaping=1[v${vi+1}]`
+        `[v${vi}]drawtext=fontfile='${fontPath}':textfile='${tf}':x=${ix}:y=${y}:fontsize=${tSize}:fontcolor=white:` +
+        `shadowcolor=black@0.6:shadowx=2:shadowy=2:text_shaping=1:utf8=1[v${vi+1}]`
       );
       vi++;
     }
@@ -306,8 +307,8 @@ function pickBgPath(bgSetting){
       const tf = await makeTxt(`item_${idx}_${k}`, itemLines[k]);
       const y  = `${iyItemsStart}+${k}*${gap}`;
       parts.push(
-        `[v${vi}]drawtext=fontfile=${fontPath}:textfile=${tf}:x=${ix}:y=${y}:fontsize=${iSize}:fontcolor=white:` +
-        `shadowcolor=black@0.5:shadowx=1:shadowy=1:text_shaping=1[v${vi+1}]`
+        `[v${vi}]drawtext=fontfile='${fontPath}':textfile='${tf}':x=${ix}:y=${y}:fontsize=${iSize}:fontcolor=white:` +
+        `shadowcolor=black@0.5:shadowx=1:shadowy=1:text_shaping=1:utf8=1[v${vi+1}]`
       );
       vi++;
     }
@@ -316,8 +317,8 @@ function pickBgPath(bgSetting){
     {
       const tf = await makeTxt(`cta_${idx}`, ctaLine);
       parts.push(
-        `[v${vi}]drawtext=fontfile=${fontPath}:textfile=${tf}:x=(w-text_w)/2:y=${iyCta}:fontsize=${cSize}:fontcolor=0xE0FFC8:` +
-        `box=1:boxcolor=black@0.55:boxborderw=24:text_shaping=1[v]`
+        `[v${vi}]drawtext=fontfile='${fontPath}':textfile='${tf}':x=(w-text_w)/2:y=${iyCta}:fontsize=${cSize}:fontcolor=0xE0FFC8:` +
+        `box=1:boxcolor=black@0.55:boxborderw=24:text_shaping=1:utf8=1[v]`
       );
     }
 
@@ -365,10 +366,9 @@ function pickBgPath(bgSetting){
     }
 
     // ---- sidecar
-    const titleText = `${normalize(e.title || "Small Wins")}${(readChannelMetaKV(LANG).title_suffix || "")}`;
-    const tags = (Array.isArray(e.tags) && e.tags.length) ? e.tags.slice(0,10) : (readChannelMetaKV(LANG).tags);
-    let desc = readChannelMetaKV(LANG).description;
-    if (readChannelMetaKV(LANG).tags_extra) desc += `\n${readChannelMetaKV(LANG).tags_extra}`;
+    const titleText = `${normalize(e.title || "Small Wins")}${CH.title_suffix || ""}`;
+    const tags = (Array.isArray(e.tags) && e.tags.length) ? e.tags.slice(0,10) : CH.tags;
+    let desc = CH.description; if (CH.tags_extra) desc += `\n${CH.tags_extra}`;
     desc = normalize(desc).replace(/^\s*(title_suffix|description)\s*=\s*/i,"").trim();
     const sidecar = { title: titleText, description: desc, tags };
     await fsp.writeFile(outJson, JSON.stringify(sidecar, null, 2), "utf8");
