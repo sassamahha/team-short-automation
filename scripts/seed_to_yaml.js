@@ -1,6 +1,6 @@
 // scripts/seed_to_yaml.js
 // Seeds (by categories/weights) -> EN master YAML (robust)
-// - JSON strict 出力 + バリデーション + リトライ + フォールバック
+// - STRICT JSON output + validation + retry + fallback
 // usage:
 //   node scripts/seed_to_yaml.js --count=3
 //   node scripts/seed_to_yaml.js --count=5 --cats=habits8,steady
@@ -118,14 +118,14 @@ function sampleWithCategoryWeights(pool, count, catsWeights){
 
 // ---------- OpenAI ----------
 async function askOpenAI_JSON(client, seed){
-  const sys = "You generate concise, practical self-improvement content for 10-second YouTube Shorts.";
+  const sys = "You generate concise, practical TEAM-HACK content (for teams) for 10-second YouTube Shorts.";
   const user = `
 Seed (title idea, may be JP/EN):
 "${seed}"
 
 Return STRICT JSON with keys:
 - "title" (<= 60 chars, clear, engaging)
-- "items" (array of EXACTLY 8 short bullets, each <= 10 words, concrete & actionable)
+- "items" (array of EXACTLY 7 short bullets, each <= 10 words, concrete & actionable)
 - "cta" (very short imperative line)
 - "tags" (2-4 simple tags)
 
@@ -148,32 +148,31 @@ function validEnglishEntry(obj){
   if (!obj || typeof obj !== "object") return false;
   const title = clean(obj.title);
   const items = Array.isArray(obj.items) ? obj.items.map(clean).filter(Boolean) : [];
-  if (!title || items.length !== 8) return false;
-  // 英語ガード（CJK が多いなら弾く）
+  if (!title || items.length !== 7) return false;
+  // English guard (reject if CJK present)
   if (hasCJK(title) || items.some(hasCJK)) return false;
   return true;
 }
 
-// ---------- フォールバック（安全テンプレ） ----------
+// ---------- Fallback (safety template) ----------
 const FALLBACK_ACTIONS = [
-  "Write one line in a journal",
-  "Drink a glass of water",
-  "Breathe slowly for 30 seconds",
-  "Tidy one small spot on desk",
-  "Stand and stretch your back",
-  "Send a thank-you message",
-  "Walk for two minutes",
-  "Plan one tiny next step"
+  "Share one quick win in chat",
+  "Write one clear next step",
+  "Do a 30-second team breath",
+  "Tidy one shared workspace spot",
+  "Stand and stretch together",
+  "Send one thank-you shoutout",
+  "Walk two minutes with a teammate",
+  "Plan one tiny handoff"
 ];
 function fallbackEntryFrom(seed){
-  const base = clean(seed) || "8 tiny steps to reset your day";
-  // タイトル調整
+  const base = clean(seed) || "7 tiny team moves to reset today";
   let title = base;
   if (title.length > 60) title = title.slice(0,57) + "...";
   const items = [];
-  // 8個になるまでローテーション
+  // Fill up to 7 items
   let i = 0;
-  while (items.length < 8){
+  while (items.length < 7){
     items.push(FALLBACK_ACTIONS[i % FALLBACK_ACTIONS.length]);
     i++;
   }
@@ -181,32 +180,32 @@ function fallbackEntryFrom(seed){
     title,
     items,
     cta: "Save and try one today",
-    tags: ["mindset","small wins"]
+    tags: ["team","small wins"]
   };
 }
 
 async function generateOne(client, seed){
-  // 最大2回リトライ → フォールバック
+  // Up to 2 retries -> fallback
   for (let attempt=0; attempt<2; attempt++){
     try{
       const json = await askOpenAI_JSON(client, seed);
       let obj;
       try { obj = JSON.parse(json); } catch { obj = {}; }
       if (!validEnglishEntry(obj)) throw new Error("validation failed");
-      // 最終整形
+      // Final shaping
       const out = {
         title: clean(obj.title),
-        items: obj.items.map(x => clean(x)).slice(0,8),
+        items: obj.items.map(x => clean(x)).slice(0,7),
         cta: clean(obj.cta) || "Save and try one today",
-        tags: (Array.isArray(obj.tags) && obj.tags.length ? obj.tags : ["mindset","small wins"])
+        tags: (Array.isArray(obj.tags) && obj.tags.length ? obj.tags : ["team","small wins"])
                 .map(x=>clean(x)).slice(0,4)
       };
       return out;
     }catch(e){
-      // 次のループで再試行
+      // retry next loop
     }
   }
-  // だめならフォールバック
+  // fallback
   return fallbackEntryFrom(seed);
 }
 
