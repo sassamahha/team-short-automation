@@ -297,7 +297,7 @@ function pickBgPath(bgSetting){
       const y  = `${iyTitle}+${k}*(${tSize}+${titleLineSpace})`;
       parts.push(
         `[v${vi}]drawtext=fontfile='${fontPath}':textfile='${tf}':x=${ix}:y=${y}:fontsize=${tSize}:fontcolor=white:` +
-        `shadowcolor=black@0.6:shadowx=2:shadowy=2:text_shaping=1:utf8=1[v${vi+1}]`
+        `shadowcolor=black@0.6:shadowx=2:shadowy=2:text_shaping=1[v${vi+1}]`
       );
       vi++;
     }
@@ -308,7 +308,7 @@ function pickBgPath(bgSetting){
       const y  = `${iyItemsStart}+${k}*${gap}`;
       parts.push(
         `[v${vi}]drawtext=fontfile='${fontPath}':textfile='${tf}':x=${ix}:y=${y}:fontsize=${iSize}:fontcolor=white:` +
-        `shadowcolor=black@0.5:shadowx=1:shadowy=1:text_shaping=1:utf8=1[v${vi+1}]`
+        `shadowcolor=black@0.5:shadowx=1:shadowy=1:text_shaping=1[v${vi+1}]`
       );
       vi++;
     }
@@ -318,7 +318,7 @@ function pickBgPath(bgSetting){
       const tf = await makeTxt(`cta_${idx}`, ctaLine);
       parts.push(
         `[v${vi}]drawtext=fontfile='${fontPath}':textfile='${tf}':x=(w-text_w)/2:y=${iyCta}:fontsize=${cSize}:fontcolor=0xE0FFC8:` +
-        `box=1:boxcolor=black@0.55:boxborderw=24:text_shaping=1:utf8=1[v]`
+        `box=1:boxcolor=black@0.55:boxborderw=24:text_shaping=1[v]`
       );
     }
 
