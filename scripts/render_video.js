@@ -3,6 +3,7 @@
 // - フォントは assets -> /usr/share/fonts の順で多段フォールバック
 // - テキストは正規化＆クレンジング
 // - drawtext は text_shaping=1:utf8=1 を明示
+// - 背景/音声はディレクトリ or ワイルドカード指定でランダム選択可
 
 const fs = require("fs");
 const fsp = fs.promises;
@@ -12,15 +13,16 @@ const yaml = require("js-yaml");
 const { spawnSync } = require("child_process");
 
 // ---- args / env
-const ARG = (k, def="") => {
+const ARG = (k, def = "") => {
   const m = process.argv.find(a => a.startsWith(`--${k}=`));
   return m ? m.split("=")[1] : def;
 };
 const LANG  = ARG("lang", "en");
 const DATE  = ARG("date", new Date().toISOString().slice(0,10));
 const DUR   = ARG("dur",  process.env.DURATION || "10");
-const BG    = ARG("bg",   "assets/bg/loop.mp4");
-const AUDIO = ARG("audio","assets/bgm/ambient01.mp3");
+// 既定はディレクトリ指定（ランダム選択）
+const BG    = ARG("bg",   "assets/bg");
+const AUDIO = ARG("audio","assets/bgm");
 
 // ---- paths
 const yamlPath  = (d,lang)=> path.join("data", lang, `${d}.yaml`);
@@ -125,7 +127,7 @@ function fontFor(lang, styleFont){
   ]);
 }
 
-// --- BGM picker -------------------------------------------------------------
+// --- Random pickers ---------------------------------------------------------
 function pickRandom(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
 
 /**
@@ -139,16 +141,13 @@ function pickAudioPath(audioSetting){
   let p = String(audioSetting || "").trim();
   const exts = /\.(mp3|wav|m4a|aac|ogg)$/i;
 
-  // "random" は既定ディレクトリから
   if (!p || p.toLowerCase() === "random") p = "assets/bgm";
 
-  // ディレクトリ指定
   if (fs.existsSync(p) && fs.statSync(p).isDirectory()){
     const files = fs.readdirSync(p).filter(f => exts.test(f));
     if (files.length) return path.join(p, pickRandom(files));
   }
 
-  // ワイルドカード（同一ディレクトリ内のみ対応）
   if (/\*/.test(p)){
     const dir = path.dirname(p);
     const pat = new RegExp("^" + path.basename(p)
@@ -158,10 +157,44 @@ function pickAudioPath(audioSetting){
     if (files.length) return path.join(dir, pickRandom(files));
   }
 
-  // ここまで来たら“実ファイル or 不明”。そのまま返す
   return p;
 }
 
+/**
+ * BG 引数/環境変数の意味:
+ *  - 実ファイル（mp4/jpg/png）：そのまま使用
+ *  - ディレクトリ：その中の動画/静止画からランダム
+ *  - ワイルドカード：例 "assets/bg/bonfilet*.mp4" にマッチする中からランダム
+ *  - "random": 既定 "assets/bg" からランダム
+ *  - 見つからない場合：単色背景にフォールバック
+ */
+function pickBgPath(bgSetting){
+  let p = String(bgSetting || "").trim();
+  if (!p || p.toLowerCase() === "random") p = "assets/bg";
+  const isFile = fs.existsSync(p) && fs.statSync(p).isFile();
+  const isDir  = fs.existsSync(p) && fs.statSync(p).isDirectory();
+  const extsVid = /\.(mp4|mov|mkv|webm)$/i;
+  const extsImg = /\.(jpe?g|png)$/i;
+
+  if (isFile) return p;
+  if (isDir){
+    const files = fs.readdirSync(p)
+      .filter(f => extsVid.test(f) || extsImg.test(f));
+    if (files.length) return path.join(p, pickRandom(files));
+    return null;
+  }
+  if (/\*/.test(p)){
+    const dir = path.dirname(p);
+    const pat = new RegExp("^" + path.basename(p)
+      .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+      .replace(/\*/g, ".*") + "$", "i");
+    const files = fs.existsSync(dir)
+      ? fs.readdirSync(dir).filter(f => pat.test(f))
+      : [];
+    if (files.length) return path.join(dir, pickRandom(files));
+  }
+  return fs.existsSync(p) ? p : null;
+}
 
 // ---- main
 (async function main(){
@@ -219,13 +252,12 @@ function pickAudioPath(audioSetting){
 
   let idx = 0;
   for (const e of (doc.entries || [])){
-
     const nonEmpty = (Array.isArray(e.items) ? e.items : []).some(s => String(s||"").trim());
     if (!String(e.title||"").trim() && !nonEmpty) {
       console.log("[skip] empty entry");
       continue;
     }
-    
+
     idx++;
     const outMp4  = path.join(odir, `${String(idx).padStart(4,"0")}.mp4`);
     const outJson = path.join(odir, `${String(idx).padStart(4,"0")}.json`);
@@ -291,11 +323,20 @@ function pickAudioPath(audioSetting){
 
     const filtergraph = parts.join(";");
 
-    // ---- inputs
-    const bgArgs = BG.match(/\.(jpe?g|png)$/i)
-      ? ["-loop","1","-t", String(DUR), "-i", BG]
-      : ["-stream_loop","-1","-t", String(DUR), "-i", BG];
+    // ---- inputs（背景）
+    const chosenBg = pickBgPath(BG);
+    let bgArgs;
+    if (chosenBg) {
+      const isImg = /\.(jpe?g|png)$/i.test(chosenBg);
+      if (isImg) bgArgs = ["-loop","1","-t", String(DUR), "-i", chosenBg];
+      else       bgArgs = ["-stream_loop","-1","-t", String(DUR), "-i", chosenBg];
+      console.log("[bg]", path.basename(chosenBg));
+    } else {
+      console.warn("[warn] no background found; fallback to solid color");
+      bgArgs = ["-f","lavfi","-t", String(DUR), "-i","color=c=black:s=1080x1920"];
+    }
 
+    // ---- inputs（音声）
     const chosenAudio = pickAudioPath(AUDIO);
     if (chosenAudio && fs.existsSync(chosenAudio)) {
       console.log("[bgm]", path.basename(chosenAudio));
@@ -324,9 +365,10 @@ function pickAudioPath(audioSetting){
     }
 
     // ---- sidecar
-    const titleText = `${normalize(e.title || "Small Wins")}${CH.title_suffix || ""}`;
-    const tags = (Array.isArray(e.tags) && e.tags.length) ? e.tags.slice(0,10) : CH.tags;
-    let desc = CH.description; if (CH.tags_extra) desc += `\n${CH.tags_extra}`;
+    const titleText = `${normalize(e.title || "Small Wins")}${(readChannelMetaKV(LANG).title_suffix || "")}`;
+    const tags = (Array.isArray(e.tags) && e.tags.length) ? e.tags.slice(0,10) : (readChannelMetaKV(LANG).tags);
+    let desc = readChannelMetaKV(LANG).description;
+    if (readChannelMetaKV(LANG).tags_extra) desc += `\n${readChannelMetaKV(LANG).tags_extra}`;
     desc = normalize(desc).replace(/^\s*(title_suffix|description)\s*=\s*/i,"").trim();
     const sidecar = { title: titleText, description: desc, tags };
     await fsp.writeFile(outJson, JSON.stringify(sidecar, null, 2), "utf8");
@@ -337,5 +379,5 @@ function pickAudioPath(audioSetting){
     console.log("[meta]", outJson);
   }
 
-  try { await fsp.rmdir(tmpRoot); } catch(_) {}
+  try { await fsp.rm(tmpRoot, { recursive:true, force:true }); } catch(_) {}
 })().catch(e=>{ console.error(e); process.exit(1); });
