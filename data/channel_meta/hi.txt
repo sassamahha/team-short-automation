@@ -1,4 +1,4 @@
-title_suffix: "｜Team Tiny Wins 💫"
+title_suffix: "｜टीम की छोटी जीतें 💫"
 description: "💼 आपके दिन के लिए 10-सेकंड के टीमवर्क बूस्टर। फ्लो, भरोसा और सहयोग बेहतर करने के लिए टीम के साथ एक छोटा-सा विन आज़माएँ।"
-#tags_extra: "#teamwork #collaboration #tinywins #Shorts"
-tags: टीम आदतें, सहयोग, कार्य संस्कृति, उत्पादकता, #Shorts
+#tags_extra: "#टीमवर्क #सहयोग #छोटीजीतें #shorts"
+tags: टीम आदतें, सहयोग, कार्य संस्कृति, उत्पादकता
