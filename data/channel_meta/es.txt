@@ -1,3 +1,4 @@
-title_suffix = ｜Hábitos de Pequeñas Victorias
-description = 📌 10s diarios de “Pequeñas Victorias”. Guarda uno y pruébalo hoy.
-tags = small wins, mentalidad, productividad
+title_suffix: "｜Team Tiny Wins 💫"
+description: "💼 Impulsores de trabajo en equipo de 10 segundos para tu día. Prueba con tu equipo una pequeña victoria para mejorar el flujo, la confianza y la colaboración."
+#tags_extra: "#teamwork #collaboration #tinywins #Shorts"
+tags: hábitos de equipo, colaboración, cultura laboral, productividad, #Shorts
