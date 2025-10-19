@@ -1,4 +1,4 @@
-title_suffix = ｜Small Success Habits ✊
-description = 📌 Daily 10s ‘Small Success’ Save and try one today.
-#tags_extra = #smallsuccess #mindset
-tags = small wins, mindset, self help
+title_suffix: "｜Team Tiny Wins 💫"
+description: "💼 10-second teamwork boosters for your day. Try one small win with your team to improve flow, trust, and collaboration."
+#tags_extra: "#teamwork #collaboration #tinywins"
+tags: team habits, collaboration, work culture, productivity
