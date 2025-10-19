@@ -1,4 +1,4 @@
-title_suffix: "｜Team Tiny Wins 💫"
+title_suffix: "｜Pequeñas victorias de equipo 💫"
 description: "💼 Impulsores de trabajo en equipo de 10 segundos para tu día. Prueba con tu equipo una pequeña victoria para mejorar el flujo, la confianza y la colaboración."
 #tags_extra: "#teamwork #collaboration #tinywins #Shorts"
 tags: hábitos de equipo, colaboración, cultura laboral, productividad, #Shorts
