@@ -1,4 +1,4 @@
-title_suffix = | Pequenos hábitos de sucesso✊
-description = 📌 Vídeos de 10s para pequenas vitórias diárias. Salve e tente hoje.
-#tags_extra = #hábitos #disciplina
-tags = hábitos, mentalidade, autoajuda
+title_suffix: "｜Time Tiny Wins 💫"
+description: "💼 Impulsos de 10 segundos para o trabalho em equipe. Experimente uma pequena conquista com o time para melhorar fluxo, confiança e colaboração."
+#tags_extra: "#TrabalhoEmEquipe #Colaboração #PequenasConquistas #shorts"
+tags: hábitos de equipe, colaboração, cultura de trabalho, produtividade
