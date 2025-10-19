@@ -1,3 +1,4 @@
-title_suffix = ｜Piccole abitudini di successo ✊
-description = 📌 “Piccolo successo” quotidiano in 10 s. Salva e prova oggi.
-tags = piccole vittorie, mindset, crescita personale
+title_suffix: "｜Piccole vittorie di squadra 💫"
+description: "💼 Booster di 10 secondi per il lavoro di squadra. Prova una piccola vittoria con il tuo team per migliorare flusso, fiducia e collaborazione."
+#tags_extra: "#LavoroDiSquadra #Collaborazione #PiccoleVittorie #shorts"
+tags: abitudini di squadra, collaborazione, cultura del lavoro, produttività
