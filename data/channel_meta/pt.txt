@@ -1,4 +1,4 @@
-title_suffix: "｜Time Tiny Wins 💫"
+title_suffix: "｜Pequenas Vitórias da Equipe 💫"
 description: "💼 Impulsos de 10 segundos para o trabalho em equipe. Experimente uma pequena conquista com o time para melhorar fluxo, confiança e colaboração."
 #tags_extra: "#TrabalhoEmEquipe #Colaboração #PequenasConquistas #shorts"
 tags: hábitos de equipe, colaboração, cultura de trabalho, produtividade
