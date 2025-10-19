@@ -1,3 +1,4 @@
-title_suffix = ｜Thói quen thành công nhỏ ✊
-description = 📌 “Chiến thắng nhỏ” 10 giây mỗi ngày. Lưu lại và thử hôm nay.
-tags = chiến thắng nhỏ, tư duy, phát triển bản thân
+title_suffix: "｜Chiến thắng nhỏ cho đội 💫"
+description: "💼 Tăng lực làm việc nhóm trong 10 giây cho một ngày của bạn. Thử một “chiến thắng nhỏ” cùng team để cải thiện nhịp làm việc, sự tin cậy và hợp tác."
+#tags_extra: "#LàmViệcNhóm #HợpTác #ChiếnThắngNhỏ #shorts"
+tags: thói quen nhóm, cộng tác, văn hóa làm việc, năng suất
