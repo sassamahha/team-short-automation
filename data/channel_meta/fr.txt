@@ -1,3 +1,4 @@
-title_suffix = ｜Petites habitudes de réussite ✊
-description = 📌 “Petit succès” quotidien en 10 s. Enregistre et essaie aujourd’hui.
-tags = petites victoires, état d’esprit, développement personnel
+title_suffix: "｜Team Tiny Wins 💫"
+description: "💼 Boosts de 10 secondes pour le travail d’équipe. Essayez une petite victoire avec votre équipe pour améliorer le flux, la confiance et la collaboration."
+#tags_extra: "#teamwork #collaboration #tinywins #Shorts"
+tags: habitudes d’équipe, collaboration, culture du travail, productivité, #Shorts
