@@ -1,4 +1,4 @@
-title_suffix: "｜Zespół Tiny Wins 💫"
+title_suffix: "｜Małe zwycięstwa zespołu 💫"
 description: "💼 10-sekundowe boostery pracy zespołowej na każdy dzień. Wypróbujcie z zespołem małe zwycięstwo, aby poprawić flow, zaufanie i współpracę."
 #tags_extra: "#pracaZespołowa #współpraca #małeSukcesy #shorts"
 tags: nawyki zespołu, współpraca, kultura pracy, produktywność
