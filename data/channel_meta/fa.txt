@@ -1,3 +1,4 @@
-title_suffix = | استادی‌ریور
-description = ذخیره کن و امروز یکی را امتحان کن — «موفقیت کوچک» ۱۰ ثانیه‌ای.
-tags = عادت, انگیزه, بهره‌وری, رشد فردی, #Shorts
+title_suffix: "｜Team Tiny Wins 💫"
+description: "💼 بوسترهای ۱۰ ثانیه‌ای کار تیمی برای روز شما. یک پیروزی کوچک را با تیمتان امتحان کنید تا جریان، اعتماد و همکاری بهتر شود."
+#tags_extra: "#teamwork #collaboration #tinywins #Shorts"
+tags: عادت‌های تیمی, همکاری, فرهنگ کار, بهره‌وری, #Shorts
