@@ -1,3 +1,4 @@
-title_suffix = ｜Małe nawyki sukcesu ✊
-description = 📌 Codzienny „mały sukces” w 10 s. Zapisz i wypróbuj dziś.
-tags = małe zwycięstwa, nastawienie, rozwój osobisty
+title_suffix: "｜Zespół Tiny Wins 💫"
+description: "💼 10-sekundowe boostery pracy zespołowej na każdy dzień. Wypróbujcie z zespołem małe zwycięstwo, aby poprawić flow, zaufanie i współpracę."
+#tags_extra: "#pracaZespołowa #współpraca #małeSukcesy #shorts"
+tags: nawyki zespołu, współpraca, kultura pracy, produktywność
