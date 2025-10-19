@@ -1,3 +1,4 @@
-title_suffix = | StudyRiver
-description = Simpan dan cuba satu hari ini — “kejayaan kecil” 10 saat.
-tags = tabiat, motivasi, produktiviti, #Shorts
+title_suffix: "｜Pasukan Tiny Wins 💫"
+description: "💼 Peningkat kerjasama 10 saat untuk hari anda. Cuba satu kemenangan kecil bersama pasukan bagi memperbaiki aliran, kepercayaan dan kolaborasi."
+#tags_extra: "#KerjaBerpasukan #Kolaborasi #KemenanganKecil #shorts"
+tags: tabiat pasukan, kolaborasi, budaya kerja, produktiviti
