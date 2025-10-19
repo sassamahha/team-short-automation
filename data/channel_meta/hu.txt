@@ -1,3 +1,4 @@
-title_suffix = | StudyRiver
-description = Mentsd el, és próbálj ki ma egy dolgot — 10 másodperces „kis siker”.
-tags = szokások, motiváció, produktivitás, önfejlesztés, #Shorts
+title_suffix: "｜Csapat Tiny Wins 💫"
+description: "💼 10 másodperces csapatmunka-boostok a napodra. Próbáljatok ki egy apró győzelmet a csapattal a flow, a bizalom és az együttműködés javítására."
+#tags_extra: "#csapatmunka #együttműködés #aprosikerek #shorts"
+tags: csapat-szokások, együttműködés, munkakultúra, produktivitás
