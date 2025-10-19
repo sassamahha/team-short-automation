@@ -1,3 +1,4 @@
-title_suffix = | ستادي ريفر
-description = احفظ الفيديو وجرّب خطوة صغيرة اليوم — نجاح صغير خلال 10 ثوانٍ.
-tags = عادات, تحفيز, إنتاجية, تطوير الذات, #Shorts
+title_suffix: "｜Team Tiny Wins 💫"
+description: "💼 معزِّزات تعاون لمدة 10 ثوانٍ ليومك. جرّب فوزًا صغيرًا مع فريقك لتحسين التدفق والثقة والتعاون."
+#tags_extra: "#teamwork #collaboration #tinywins #Shorts"
+tags: عادات الفريق, التعاون, ثقافة العمل, الإنتاجية, #Shorts
