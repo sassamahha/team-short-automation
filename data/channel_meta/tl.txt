@@ -1,3 +1,4 @@
-title_suffix = ｜Maliit na gawi ng tagumpay ✊
-description = 📌 Araw-araw na “maliit na tagumpay” sa 10 s. I-save at subukan ngayon.
-tags = maliliit na panalo, mindset, tulong-sa-sarili
+title_suffix: "｜Maliit na panalo ng team 💫"
+description: "💼 10-segundong booster para sa teamwork sa araw mo. Subukan ang isang maliit na panalo kasama ang team para mapabuti ang flow, tiwala, at kolaborasyon."
+#tags_extra: "#Teamwork #Kolaborasyon #MuntingPanalo #shorts"
+tags: mga gawi ng team, kolaborasyon, kultura sa trabaho, produktibidad
