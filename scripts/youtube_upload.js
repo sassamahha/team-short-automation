@@ -1,32 +1,35 @@
 // scripts/youtube_upload.js
-// Upload from videos/{lang}/queue -> move to sent (or failed/dups)
-// usage:
-//   single: node scripts/youtube_upload.js --file=videos/fr/queue/2025-10-15/0001.mp4 --lang=fr
-//   batch : node scripts/youtube_upload.js --lang=fr --max=2
+// Queue から「最古順で max 本だけ」アップロード。
+// 成功したファイルだけ sent/ へ移動。重複タイトルは dups/ へ回収。
+// 使い方:
+//   単発: node scripts/youtube_upload.js --file=videos/ja/queue/2025-10-18/0001.mp4 --lang=ja
+//   連続: node scripts/youtube_upload.js --lang=es --max=3
 //
-// 必要な環境変数：
+// 必要環境変数:
 //   YT_CLIENT_ID / YT_CLIENT_SECRET / (YT_REFRESH_TOKEN_{CC} または YT_REFRESH_TOKEN)
 //
-// 改良点：
-// - 絶対パスでも lang を安全抽出
-// - 失敗時は failed/ に退避してバッチ継続
-// - 直近50本のチャンネルタイトルと重複したら dups/ に退避し、次のストックを試行（全言語）
-// - トークンのチャンネル名をログで可視化（取り違え検出）
-// - ログ強化 / メタ安全化（clamp, タグ上限）
-// - sidecar(.json) 併走
-// - queue → sent/failed/dups の日付ディレクトリ維持
+// 任意環境変数:
+//   YT_SPACING_MS       ... 連投間隔 (ms) デフォ 2000
+//   YT_DEDUP_TITLES=1   ... 直近50本のタイトル去重を有効化（既定OFF）
 
 const fs = require("fs");
 const fsp = fs.promises;
 const path = require("path");
 const { google } = require("googleapis");
 
-// ---------------- utils ----------------
+// ---- settings ----
+const SETTINGS = {
+  SPACING_MS: parseInt(process.env.YT_SPACING_MS || "2000", 10),
+  DEDUP_TITLES: process.env.YT_DEDUP_TITLES === "1",
+};
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const clamp = (s, n) => (s && s.length > n ? s.slice(0, n) : s || "");
 const uniq = (arr) => Array.from(new Set(arr || []));
+const norm = (p) => p.split(path.sep).join("/");
+function ensureArray(x){ return Array.isArray(x) ? x : x ? [x] : []; }
+function normTitle(s){ return (s||"").toLowerCase().replace(/\s+/g," ").trim(); }
 
-function norm(p) { return p.split(path.sep).join("/"); }
 function detectLangFromPath(p) {
   const m = norm(p).match(/\/?videos\/([^/]+)\/queue\//);
   return m ? m[1] : null;
@@ -35,10 +38,8 @@ function detectDateDirFromPath(p) {
   const m = norm(p).match(/\/queue\/(\d{4}-\d{2}-\d{2})\//);
   return m ? m[1] : null;
 }
-function ensureArray(x) { return Array.isArray(x) ? x : x ? [x] : []; }
-function normTitle(s){ return (s||"").toLowerCase().replace(/\s+/g," ").trim(); }
 
-// ---------------- channel meta (title/desc/tags per language) ----------------
+// ---- channel meta ----
 async function readChannelMeta(lang) {
   const p = path.join("data", "channel_meta", `${lang}.txt`);
   const out = {
@@ -51,12 +52,10 @@ async function readChannelMeta(lang) {
 
   const txt = await fsp.readFile(p, "utf8");
   const lines = txt.split(/\r?\n/);
-
   let curKey = null;
   for (const raw of lines) {
     const line = raw.trim();
     if (!line || line.startsWith("#")) continue;
-
     const m = line.match(/^([a-zA-Z_]+)\s*=\s*(.*)$/);
     if (m) {
       curKey = m[1];
@@ -75,9 +74,9 @@ async function readChannelMeta(lang) {
   return out;
 }
 
-// ---------------- youtube auth (ID/SECRET + refresh_token_{CC}) ----------------
+// ---- auth ----
 function ytClientForLang(lang) {
-  const cc = (lang || "en").toUpperCase(); // en -> EN
+  const cc = (lang || "en").toUpperCase();
   const clientId = process.env.YT_CLIENT_ID;
   const clientSecret = process.env.YT_CLIENT_SECRET;
   const refreshToken =
@@ -93,6 +92,7 @@ function ytClientForLang(lang) {
   auth.setCredentials({ refresh_token: refreshToken });
   const yt = google.youtube({ version: "v3", auth });
 
+  // 取り違え検出用：mine チャンネル名を一度だけ出力
   yt.channels
     .list({ part: "snippet", mine: true })
     .then((r) => {
@@ -107,16 +107,12 @@ function ytClientForLang(lang) {
   return yt;
 }
 
-// ---------------- sidecar meta (####.json) ----------------
+// ---- sidecar ----
 async function readSidecar(file) {
   const j = file.replace(/\.mp4$/i, ".json");
   if (fs.existsSync(j)) {
-    try {
-      const obj = JSON.parse(await fsp.readFile(j, "utf8"));
-      return obj || {};
-    } catch (_) {
-      console.warn("[sidecar parse fail]", j);
-    }
+    try { return JSON.parse(await fsp.readFile(j, "utf8")) || {}; }
+    catch { console.warn("[sidecar parse fail]", j); }
   }
   return {};
 }
@@ -135,7 +131,7 @@ function buildSnippet(baseTitle, ch, sidecar) {
   return { title, description, tags };
 }
 
-// ---------------- move helpers ----------------
+// ---- movers ----
 async function safeMove(src, dest) {
   await fsp
     .rename(src, dest)
@@ -147,17 +143,11 @@ async function moveToSent(file) {
   const dateDir = detectDateDirFromPath(file) || "unknown-date";
   const lang = detectLangFromPath(file);
   if (!lang) throw new Error(`[moveToSent] cannot detect lang from ${file}`);
-
   const destDir = path.join("videos", lang, "sent", dateDir);
   await fsp.mkdir(destDir, { recursive: true });
-
-  await safeMove(file, path.join(destDir, path.basename(file)));
-
+  if (fs.existsSync(file)) await safeMove(file, path.join(destDir, path.basename(file)));
   const j = file.replace(/\.mp4$/i, ".json");
-  if (fs.existsSync(j)) {
-    await safeMove(j, path.join(destDir, path.basename(j)));
-  }
-
+  if (fs.existsSync(j)) await safeMove(j, path.join(destDir, path.basename(j)));
   console.log("[moved to sent]", norm(path.join(destDir, path.basename(file))));
 }
 
@@ -165,17 +155,11 @@ async function moveToFailed(file) {
   const dateDir = detectDateDirFromPath(file) || "unknown-date";
   const lang = detectLangFromPath(file);
   if (!lang) throw new Error(`[moveToFailed] cannot detect lang from ${file}`);
-
   const destDir = path.join("videos", lang, "failed", dateDir);
   await fsp.mkdir(destDir, { recursive: true });
-
-  await safeMove(file, path.join(destDir, path.basename(file)));
-
+  if (fs.existsSync(file)) await safeMove(file, path.join(destDir, path.basename(file)));
   const j = file.replace(/\.mp4$/i, ".json");
-  if (fs.existsSync(j)) {
-    await safeMove(j, path.join(destDir, path.basename(j)));
-  }
-
+  if (fs.existsSync(j)) await safeMove(j, path.join(destDir, path.basename(j)));
   console.warn("[moved to failed]", norm(path.join(destDir, path.basename(file))));
 }
 
@@ -183,33 +167,24 @@ async function moveToDups(file) {
   const dateDir = detectDateDirFromPath(file) || "unknown-date";
   const lang = detectLangFromPath(file);
   if (!lang) throw new Error(`[moveToDups] cannot detect lang from ${file}`);
-
   const destDir = path.join("videos", lang, "dups", dateDir);
   await fsp.mkdir(destDir, { recursive: true });
-
-  await safeMove(file, path.join(destDir, path.basename(file)));
-
+  if (fs.existsSync(file)) await safeMove(file, path.join(destDir, path.basename(file)));
   const j = file.replace(/\.mp4$/i, ".json");
-  if (fs.existsSync(j)) {
-    await safeMove(j, path.join(destDir, path.basename(j)));
-  }
-
+  if (fs.existsSync(j)) await safeMove(j, path.join(destDir, path.basename(j)));
   console.warn("[moved to dups]", norm(path.join(destDir, path.basename(file))));
 }
 
-// ---------------- pick batch ----------------
-async function pickBatch(lang, max = 1) {
+// ---- pickers ----
+async function pickOldest(lang, max = 1) {
   const dir = path.join("videos", lang, "queue");
   if (!fs.existsSync(dir)) return [];
-  const dates = fs
-    .readdirSync(dir)
-    .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))
-    .sort(); // oldest first
+  const dates = fs.readdirSync(dir).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort(); // oldest first
 
   const files = [];
   for (const d of dates) {
     const p = path.join(dir, d);
-    const ls = fs.readdirSync(p).filter((f) => f.endsWith(".mp4")).sort();
+    const ls = fs.readdirSync(p).filter(f => f.endsWith(".mp4")).sort(); // 0001.mp4..順
     for (const f of ls) {
       files.push(path.join(p, f));
       if (files.length >= max) break;
@@ -220,8 +195,8 @@ async function pickBatch(lang, max = 1) {
   return files;
 }
 
-// ---------------- title dedup (YouTube recent 50) ----------------
-async function recentTitlesSet(yt){
+// ---- dedup (optional) ----
+async function fetchRecentTitles(yt){
   try {
     const ch = await yt.channels.list({ part:"id", mine:true });
     const channelId = ch.data.items?.[0]?.id;
@@ -233,17 +208,8 @@ async function recentTitlesSet(yt){
   } catch { return new Set(); }
 }
 
-async function predictTitle(file, lang, sidecar){
-  const ch = await readChannelMeta(lang);
-  const baseTitle = clamp(sidecar.title || path.basename(file, ".mp4"), 100);
-  const { title } = buildSnippet(baseTitle, ch, sidecar);
-  return title;
-}
-
-// ---------------- uploader (with small retry) ----------------
+// ---- uploader ----
 async function uploadOne(yt, file, lang, sidecar = {}) {
-  console.log("[try upload]", norm(file), "lang=", lang);
-
   const ch = await readChannelMeta(lang);
   const baseTitle = clamp(sidecar.title || path.basename(file, ".mp4"), 100);
   const { title, description, tags } = buildSnippet(baseTitle, ch, sidecar);
@@ -251,19 +217,20 @@ async function uploadOne(yt, file, lang, sidecar = {}) {
   const req = {
     part: "snippet,status",
     requestBody: {
-      snippet: { title, description, tags, categoryId: "27" }, // HowTo & Style
+      snippet: { title, description, tags, categoryId: "27" }, // Education
       status: { privacyStatus: "public", selfDeclaredMadeForKids: false },
     },
     media: { body: fs.createReadStream(file) },
   };
 
+  // ★ 既存の yt クライアントをそのまま使う（auth 再注入しない）
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       const res = await yt.videos.insert(req);
       const vid = res?.data?.id;
       if (!vid) throw new Error("no video id in response");
       console.log("[uploaded]", path.basename(file), vid);
-      return { vid, title }; // ← titleも返して同一ラン内の去重に使う
+      return { vid, title };
     } catch (e) {
       const code = e?.code || e?.response?.status;
       const retriable = code === 429 || (code >= 500 && code < 600);
@@ -281,35 +248,42 @@ async function uploadOne(yt, file, lang, sidecar = {}) {
   }
 }
 
-// ---------------- main ----------------
+// ---- main ----
 async function main() {
   const fileArg =
-    (process.argv.find((a) => a.startsWith("--file=")) || "").split("=")[1] || "";
+    (process.argv.find(a => a.startsWith("--file=")) || "").split("=")[1] || "";
   const langArg =
-    (process.argv.find((a) => a.startsWith("--lang=")) || "").split("=")[1] || "en";
+    (process.argv.find(a => a.startsWith("--lang=")) || "").split("=")[1] || "en";
   const maxArg = parseInt(
-    (process.argv.find((a) => a.startsWith("--max=")) || "").split("=")[1] || "1",
-    10
+    (process.argv.find(a => a.startsWith("--max=")) || "").split("=")[1] || "1", 10
   );
 
   const yt = ytClientForLang(langArg);
-  // 起動時に直近タイトル集合を取得（全言語）
-  const recent = await recentTitlesSet(yt);
+  const recent = SETTINGS.DEDUP_TITLES ? await fetchRecentTitles(yt) : new Set();
 
+  // ---- single file ----
   if (fileArg) {
+    if (!fs.existsSync(fileArg)) {
+      console.warn("[skip] not found:", norm(fileArg));
+      return;
+    }
     const sidecar = await readSidecar(fileArg);
-    // アップ前にタイトル予測して去重
-    try {
-      const preTitle = await predictTitle(fileArg, langArg, sidecar);
-      if (recent.has(normTitle(preTitle))) {
-        console.log("[skip dup-title]", preTitle);
+
+    if (SETTINGS.DEDUP_TITLES) {
+      const ch = await readChannelMeta(langArg);
+      const baseTitle = clamp(sidecar.title || path.basename(fileArg, ".mp4"), 100);
+      const title = clamp(
+        (baseTitle.endsWith(ch.title_suffix) || baseTitle.includes(ch.title_suffix))
+          ? baseTitle : `${baseTitle}${ch.title_suffix}`, 100);
+      if (recent.has(normTitle(title))) {
+        console.log("[skip dup-title]", title);
         await moveToDups(fileArg);
         return;
       }
-    } catch(_) {}
+    }
+
     try {
-      const { title } = await uploadOne(yt, fileArg, langArg, sidecar);
-      recent.add(normTitle(title)); // 同一ラン内の連投重複も防ぐ
+      await uploadOne(yt, fileArg, langArg, sidecar);
       await moveToSent(fileArg);
     } catch (e) {
       await moveToFailed(fileArg);
@@ -318,9 +292,8 @@ async function main() {
     return;
   }
 
-  // スキップ分を埋めるため、候補は多めに取る
-  const candidateN = Math.max(maxArg * 10, maxArg);
-  const batch = await pickBatch(langArg, candidateN);
+  // ---- batch ----
+  const batch = await pickOldest(langArg, maxArg);
   if (!batch.length) {
     console.log("[skip] no files in queue");
     return;
@@ -329,35 +302,38 @@ async function main() {
   let done = 0;
   for (const f of batch) {
     if (done >= maxArg) break;
+
     const sidecar = await readSidecar(f);
 
-    // アップ前にタイトル予測して去重
-    try {
-      const preTitle = await predictTitle(f, langArg, sidecar);
-      if (recent.has(normTitle(preTitle))) {
-        console.log("[skip dup-title]", preTitle);
-        await moveToDups(f); // キューから除去→次のストックを試す
-        continue;
-      }
-    } catch(_) {}
+    if (SETTINGS.DEDUP_TITLES) {
+      try {
+        const ch = await readChannelMeta(langArg);
+        const baseTitle = clamp(sidecar.title || path.basename(f, ".mp4"), 100);
+        const title = clamp(
+          (baseTitle.endsWith(ch.title_suffix) || baseTitle.includes(ch.title_suffix))
+            ? baseTitle : `${baseTitle}${ch.title_suffix}`, 100);
+        if (recent.has(normTitle(title))) {
+          console.log("[skip dup-title]", title);
+          await moveToDups(f);
+          continue;
+        }
+      } catch {}
+    }
 
     try {
       const { title } = await uploadOne(yt, f, langArg, sidecar);
-      recent.add(normTitle(title));
+      if (SETTINGS.DEDUP_TITLES) recent.add(normTitle(title));
       await moveToSent(f);
       done++;
     } catch (e) {
       await moveToFailed(f);
-      console.warn("[skip after fail]", path.basename(f), e?.message || e);
+      console.warn("[upload fail]", path.basename(f), e?.message || e);
     }
 
-    if (done < maxArg) await sleep(1200); // 連投間隔（好みで調整）
+    if (done < maxArg) await sleep(SETTINGS.SPACING_MS);
   }
 
   console.log(`[done] uploaded ${done} file(s) for ${langArg}`);
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+main().catch((e) => { console.error(e); process.exit(1); });
