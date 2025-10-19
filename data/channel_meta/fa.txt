@@ -1,4 +1,5 @@
-title_suffix: "｜Team Tiny Wins 💫"
+title_suffix: "｜پیروزی‌های کوچک تیم 💫"
 description: "💼 بوسترهای ۱۰ ثانیه‌ای کار تیمی برای روز شما. یک پیروزی کوچک را با تیمتان امتحان کنید تا جریان، اعتماد و همکاری بهتر شود."
-#tags_extra: "#teamwork #collaboration #tinywins #Shorts"
-tags: عادت‌های تیمی, همکاری, فرهنگ کار, بهره‌وری, #Shorts
+#tags_extra: "#کار_تیمی #همکاری #پیروزی_کوچک #shorts"
+tags: عادت‌های تیمی, همکاری, فرهنگ کار, بهره‌وری
+
