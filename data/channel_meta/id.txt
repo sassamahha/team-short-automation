@@ -1,3 +1,4 @@
-title_suffix = ｜Kebiasaan Sukses Kecil ✊
-description = 📌 “Sukses kecil” harian 10 dtk. Simpan dan coba hari ini.
-tags = kemenangan kecil, mindset, pengembangan diri
+title_suffix: "｜Kemenangan Kecil Tim 💫"
+description: "💼 Booster kerja tim 10 detik untuk harimu. Coba satu kemenangan kecil bersama tim untuk meningkatkan alur, kepercayaan, dan kolaborasi."
+#tags_extra: "#KerjaTim #Kolaborasi #KemenanganKecil #shorts"
+tags: kebiasaan tim, kolaborasi, budaya kerja, produktivitas
