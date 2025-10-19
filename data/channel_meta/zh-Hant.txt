@@ -1,3 +1,4 @@
-title_suffix =｜StudyRiver
-description = 先收藏，今天就試一個。10 秒的「小小成功」。
-tags = 習慣, 動力, 生產力, 自我成長, #Shorts
+title_suffix: "｜團隊小進步 💫"
+description: "💼 為你的一天注入 10 秒團隊合作增益。與團隊一起嘗試一個小小的勝利，提升流程、信任與協作。"
+#tags_extra: "#團隊合作 #協作 #小勝利 #shorts"
+tags: 團隊習慣, 協作, 職場文化, 產能
