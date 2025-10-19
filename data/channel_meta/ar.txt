@@ -1,4 +1,4 @@
-title_suffix: "｜Team Tiny Wins 💫"
+title_suffix: "｜انتصارات صغيرة للفريق 💫"
 description: "💼 معزِّزات تعاون لمدة 10 ثوانٍ ليومك. جرّب فوزًا صغيرًا مع فريقك لتحسين التدفق والثقة والتعاون."
-#tags_extra: "#teamwork #collaboration #tinywins #Shorts"
-tags: عادات الفريق, التعاون, ثقافة العمل, الإنتاجية, #Shorts
+#tags_extra: "#عمل_فريقي #تعاون #انتصارات_صغيرة #shorts"
+tags: عادات الفريق, التعاون, ثقافة العمل, الإنتاجية
