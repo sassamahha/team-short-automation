@@ -2,7 +2,7 @@ name: Post JA
 
 on:
   workflow_dispatch: {}
-   schedule:
+  schedule:
     - cron: "20 3 * * *"
     - cron: "55 10 * * *"
     - cron: "14 23 * * *"
