@@ -1,3 +1,4 @@
-title_suffix = ｜Kleine Erfolgsgewohnheiten ✊
-description = 📌 Täglicher „kleiner Erfolg“ in 10 Sek. Speichere und probiere es heute.
-tags = kleine Siege, Mindset, Selbstverbesserung
+title_suffix: "｜Team Tiny Wins 💫"
+description: "💼 10-Sekunden-Booster für Teamwork im Alltag. Probiert mit eurem Team einen kleinen Win, um Flow, Vertrauen und Zusammenarbeit zu stärken."
+#tags_extra: "#teamwork #collaboration #tinywins #Shorts"
+tags: Teamgewohnheiten, Zusammenarbeit, Arbeitskultur, Produktivität, #Shorts
