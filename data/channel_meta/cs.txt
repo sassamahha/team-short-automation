@@ -1,3 +1,4 @@
-title_suffix = | StudyRiver
-description = Ulož si a dnes zkus jednu věc — 10sekundový „malý úspěch“.
-tags = návyky, motivace, produktivita, seberozvoj, #Shorts
+title_suffix: "｜Team Tiny Wins 💫"
+description: "💼 10sekundové posilovače týmové práce pro váš den. Vyzkoušejte s týmem jednu malou výhru a zlepšete flow, důvěru a spolupráci."
+#tags_extra: "#teamwork #collaboration #tinywins #Shorts"
+tags: týmové návyky, spolupráce, kultura práce, produktivita, #Shorts
