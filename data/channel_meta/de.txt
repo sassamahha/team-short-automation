@@ -1,4 +1,4 @@
-title_suffix: "｜Team Tiny Wins 💫"
+title_suffix: "｜Kleine Team-Erfolge 💫"
 description: "💼 10-Sekunden-Booster für Teamwork im Alltag. Probiert mit eurem Team einen kleinen Win, um Flow, Vertrauen und Zusammenarbeit zu stärken."
-#tags_extra: "#teamwork #collaboration #tinywins #Shorts"
-tags: Teamgewohnheiten, Zusammenarbeit, Arbeitskultur, Produktivität, #Shorts
+#tags_extra: "#Teamwork #Zusammenarbeit #KleineErfolge #shorts"
+tags: Teamgewohnheiten, Zusammenarbeit, Arbeitskultur, Produktivität
