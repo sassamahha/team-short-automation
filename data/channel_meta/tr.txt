@@ -1,3 +1,4 @@
-title_suffix = ｜Küçük Başarı Alışkanlıkları ✊
-description = 📌 10 sn’de günlük “küçük başarı”. Kaydet ve bugün dene.
-tags = küçük zaferler, zihniyet, kişisel gelişim
+title_suffix: "｜Ekibin küçük zaferleri 💫"
+description: "💼 Gününüz için 10 saniyelik ekip çalışması güçlendiricileri. Akış, güven ve işbirliğini geliştirmek için ekibinizle küçük bir zafer deneyin."
+#tags_extra: "#TakımÇalışması #İşbirliği #KüçükZaferler #shorts"
+tags: takım alışkanlıkları, işbirliği, iş kültürü, üretkenlik
